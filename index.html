@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Propose, check, approve: AI agents in scientific workflows</title>
+<meta name="description" content="A 15-minute hands-on lesson distilled from ApexAgent: teach Claude a lab's review rules with a Skill, then act as the human in the loop.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --paper: #f4f6f7; --panel: #ffffff; --sunk: #e9edef;
+  --ink: #14212b; --ink-2: #4a5862; --muted: #7d8a93;
+  --rule: #d5dce0; --axis: #b9c1c6;
+  --data: #2a78d6; --data-ink: #ffffff; --rejected: #c3cacf;
+  --review: #fab219; --ok: #0a7d32; --bad: #c4302f;
+  --sans: "Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --pad: clamp(20px, 4.5vw, 88px);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --paper: #0f171d; --panel: #16212a; --sunk: #1d2a34;
+    --ink: #e8edf0; --ink-2: #aab6be; --muted: #7d8a93;
+    --rule: #2a3843; --axis: #3a4a56;
+    --data: #3987e5; --rejected: #3d4a54; --ok: #2fbf5b; --bad: #ff6b6b;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--paper); color: var(--ink); }
+body { font: 400 clamp(15px, 1.15vw, 20px)/1.5 var(--sans); }
+a { color: var(--data); }
+code { font: 0.9em var(--mono); background: var(--sunk); padding: 0.05em 0.35em; border-radius: 4px; }
+
+/* ---------------------------------------------------------------- deck */
+.deck { height: 100vh; height: 100dvh; display: flex; transition: transform .45s cubic-bezier(.2,.7,.2,1); }
+@media (prefers-reduced-motion: reduce) { .deck { transition: none; } }
+.slide { flex: 0 0 100vw; height: 100%; overflow-y: auto; padding: var(--pad) var(--pad) calc(var(--pad) + 28px);
+  display: flex; flex-direction: column; }
+.slide > .body { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; }
+.slide[aria-hidden="true"] { visibility: hidden; }
+
+.where { font-size: 0.82em; color: var(--muted); font-weight: 500; margin-bottom: 0.4em; display: flex; align-items: center; gap: 0.6em; }
+.where .n { display: inline-grid; place-items: center; min-width: 1.75em; height: 1.75em; border-radius: 50%;
+  background: var(--data); color: var(--data-ink); font-weight: 700; font-size: 0.95em; }
+h1 { font-size: clamp(44px, 7.4vw, 136px); line-height: 0.95; letter-spacing: -0.035em; font-weight: 800; margin: 0; }
+h2 { font-size: clamp(28px, 3.3vw, 60px); line-height: 1.05; letter-spacing: -0.02em; font-weight: 700; margin: 0 0 0.35em; }
+h3 { font-size: 1.05em; margin: 0 0 0.3em; font-weight: 700; }
+.lede { font-size: 1.3em; color: var(--ink-2); max-width: 38em; margin: 0; }
+.sub { color: var(--ink-2); max-width: 62em; margin: 0 0 1.2em; }
+.term { font-weight: 600; color: var(--ink); }
+
+/* nav chrome */
+.chrome { position: fixed; left: 0; right: 0; bottom: 0; height: 28px; display: flex; align-items: center; gap: 14px;
+  padding: 0 var(--pad); font-size: 13px; color: var(--muted); z-index: 10; pointer-events: none; }
+.chrome .bar { flex: 1; height: 3px; background: var(--rule); border-radius: 2px; overflow: hidden; }
+.chrome .bar i { display: block; height: 100%; background: var(--data); transition: width .3s; }
+.chrome .count { font-variant-numeric: tabular-nums; }
+.edge { position: fixed; top: 0; bottom: 28px; width: 3vw; z-index: 9; cursor: pointer; background: none; border: 0; padding: 0; }
+.edge.prev { left: 0; } .edge.next { right: 0; }
+.edge:hover { background: linear-gradient(90deg, color-mix(in srgb, var(--data) 10%, transparent), transparent); }
+.edge.next:hover { background: linear-gradient(270deg, color-mix(in srgb, var(--data) 10%, transparent), transparent); }
+.hint { position: fixed; right: var(--pad); top: 18px; font-size: 13px; color: var(--muted); z-index: 10; transition: opacity .6s; pointer-events: none; }
+
+/* ---------------------------------------------------------------- shared parts */
+.split { display: grid; grid-template-columns: minmax(300px, 0.9fr) minmax(0, 1.6fr); gap: clamp(20px, 3vw, 56px); align-items: start; }
+.split.even { grid-template-columns: 1fr 1fr; }
+.split.side { grid-template-columns: minmax(0, 2.4fr) minmax(280px, 1fr); }
+@media (max-width: 900px) { .split, .split.even, .split.side { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 14px; padding: clamp(16px, 1.6vw, 28px); }
+.panel + .panel { margin-top: 14px; }
+.kind { font-weight: 700; font-size: 0.9em; margin: 0 0 0.45em; }
+.kind.do { color: var(--data); }
+.kind.stuck { color: var(--ink-2); }
+.prompt { position: relative; background: var(--sunk); border-radius: 10px; padding: 0.8em 5.2em 0.8em 1em;
+  font: 0.92em/1.55 var(--mono); white-space: pre-wrap; margin: 0.4em 0 0.9em; }
+.expect { background: var(--sunk); border-radius: 10px; padding: 0.8em 1em; font: 0.82em/1.6 var(--mono); white-space: pre-wrap; margin: 0; }
+button, .btn { font: 500 0.88em var(--sans); cursor: pointer; border-radius: 9px; border: 1px solid var(--rule);
+  background: var(--panel); color: var(--ink); padding: 0.5em 0.95em; text-decoration: none; display: inline-flex; gap: 0.45em; align-items: center; }
+button:hover, .btn:hover { border-color: var(--data); }
+:focus-visible { outline: 2px solid var(--data); outline-offset: 2px; }
+.btn.primary { background: var(--data); color: var(--data-ink); border-color: transparent; font-weight: 600; }
+.copy { position: absolute; top: 0.5em; right: 0.5em; padding: 0.25em 0.7em; font-size: 0.78em; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.pause { margin: 1.2em 0 0; padding-left: 0.8em; border-left: 3px solid var(--ok); color: var(--ink-2); }
+.pause b { color: var(--ink); }
+ol.steps { margin: 0; padding-left: 1.3em; } ol.steps li { margin: 0.3em 0; }
+
+/* ---------------------------------------------------------------- title */
+.title-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: clamp(24px, 4vw, 80px); align-items: center; flex: 1; }
+@media (max-width: 900px) { .title-grid { grid-template-columns: 1fr; } }
+.thon { width: 100%; max-width: 76vh; margin: 0 auto; aspect-ratio: 1; display: block; border-radius: 50%; }
+.thon-cap { font-size: 0.8em; color: var(--muted); margin-top: 0.8em; text-align: center; }
+.byline { margin-top: 2em; color: var(--ink-2); }
+.byline b { color: var(--ink); }
+
+/* the pattern: a real sequence, so it is numbered */
+.flow { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 2.2em; counter-reset: f; }
+@media (max-width: 900px) { .flow { grid-template-columns: 1fr 1fr; gap: 28px 0; } }
+.flow div { position: relative; padding: 1.1em 2.2em 1em 0; border-top: 3px solid var(--data); }
+.flow div:last-child { border-top-color: var(--ok); }
+.flow div::before { counter-increment: f; content: counter(f); position: absolute; top: -0.8em; left: 0; background: var(--paper);
+  padding-right: 0.45em; font-weight: 800; color: var(--data); }
+.flow div:last-child::before { color: var(--ok); }
+.flow b { display: block; font-size: 1.35em; line-height: 1.15; margin-top: 0.3em; }
+.flow span { color: var(--ink-2); font-size: 0.92em; }
+
+/* ---------------------------------------------------------------- CTF chart */
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+.tile .v { font-size: clamp(24px, 2.4vw, 44px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
+.tile .k { font-size: 0.85em; color: var(--ink-2); }
+.tile.hot .v { color: var(--data); }
+.chart { position: relative; }
+.chart svg { width: 100%; height: auto; max-height: 46vh; display: block; }
+svg text { font: 13px var(--sans); fill: var(--muted); font-variant-numeric: tabular-nums; }
+.legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 0.82em; color: var(--ink-2); margin: 0 0 6px; }
+.sw { display: inline-block; width: 0.8em; height: 0.8em; border-radius: 3px; vertical-align: -0.05em; margin-right: 0.4em; }
+.controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 10px; }
+.controls input[type=range] { flex: 1 1 260px; accent-color: var(--data); }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--paper); font-size: 13px;
+  border-radius: 7px; padding: 6px 10px; white-space: nowrap; opacity: 0; z-index: 3; }
+.flags { margin: 0; padding: 0; list-style: none; font-size: 0.88em; }
+.flags li { margin: 0 0 0.6em; }
+
+/* ---------------------------------------------------------------- gallery */
+.gallery { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: clamp(4px, 0.5vw, 10px);
+  width: min(100%, calc((100dvh - 250px) * 1.75)); }
+.gallery.hide-empty { grid-template-columns: repeat(7, minmax(0, 1fr)); width: min(100%, calc((100dvh - 250px) * 1.55)); }
+.cls { padding: 0; border-radius: 10px; overflow: hidden; display: block; position: relative; background: var(--panel); border: 3px solid transparent; }
+.cls img { display: block; width: 100%; aspect-ratio: 1; }
+.cls .cap { display: flex; justify-content: space-between; font-size: 0.7em; padding: 0.15em 0.4em; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.cls .cap b { color: var(--ink); }
+.cls[aria-pressed="true"] { border-color: var(--data); }
+.cls[aria-pressed="true"]::after { content: "keep"; position: absolute; top: 4px; right: 4px; background: var(--data); color: #fff; font-size: 0.66em; font-weight: 700; border-radius: 4px; padding: 0 5px; }
+.cls.claude::before { content: "Claude"; position: absolute; top: 4px; left: 4px; background: var(--ink); color: var(--paper); font-size: 0.66em; font-weight: 700; border-radius: 4px; padding: 0 5px; z-index: 1; }
+.cls.empty img { opacity: .3; }
+.gallery.hide-empty .cls.empty { display: none; }
+.checkline { display: flex; gap: 8px; margin-top: 0.5em; }
+.checkline input { flex: 1; min-width: 0; font: 0.9em var(--mono); padding: 0.55em 0.8em; border-radius: 9px; border: 1px solid var(--axis); background: var(--panel); color: var(--ink); }
+.verdict { margin-top: 0.8em; font-size: 0.88em; }
+.verdict .ok { color: var(--ok); font-weight: 700; }
+.verdict .bad { color: var(--bad); font-weight: 700; }
+.mini { display: flex; gap: 1.6em; margin: 0.6em 0 0; }
+.mini .v { font-size: 1.8em; font-weight: 800; line-height: 1; }
+.mini .k { font-size: 0.8em; color: var(--ink-2); }
+
+/* ---------------------------------------------------------------- builder */
+.builder label { display: block; font-size: 0.88em; font-weight: 600; margin: 0.7em 0 0.25em; }
+.builder label:first-child { margin-top: 0; }
+.builder label span { font-weight: 400; color: var(--ink-2); }
+.builder input, .builder textarea { width: 100%; font: 0.9em/1.45 var(--sans); padding: 0.5em 0.7em; border-radius: 9px; border: 1px solid var(--axis); background: var(--panel); color: var(--ink); }
+.builder textarea { min-height: 5.6em; resize: vertical; }
+#skillPreview { margin: 0; max-height: calc(100dvh - 280px); overflow: auto; background: var(--sunk); border-radius: 12px; padding: 1em 1.2em; font: 0.76em/1.55 var(--mono); white-space: pre-wrap; }
+
+/* ---------------------------------------------------------------- scale */
+.layers { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 1.4em; }
+@media (max-width: 900px) { .layers { grid-template-columns: 1fr 1fr; } }
+.layers > div { padding: 1.2em 1.4em 1.4em 0; border-top: 1px solid var(--rule); }
+.layers > div + div { padding-left: 1.4em; border-left: 1px solid var(--rule); }
+.layers .now { border-top: 4px solid var(--data); }
+.layers .tag { font-size: 0.8em; font-weight: 700; color: var(--data); min-height: 1.4em; }
+.layers h3 { font-size: 1.4em; margin: 0.15em 0 0.35em; }
+.layers p { margin: 0; color: var(--ink-2); }
+.bigurl { font-size: clamp(20px, 2.1vw, 40px); font-weight: 700; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+<!-- ============================================================ 1 title -->
+<section class="slide" aria-label="Title">
+  <div class="title-grid">
+    <div>
+      <h1>Propose,<br>check,<br>approve.</h1>
+      <p class="lede" style="margin-top:0.9em">Teach Claude a lab's review rules with a Skill, then be the human in the loop. Distilled from <a href="https://github.com/czimaginginstitute/ApexAgent">ApexAgent</a>, the agent that runs our cryo-EM processing.</p>
+      <p class="byline"><b>Jonathan Schwartz &amp; Utz Ermel</b>, Imaging<br>AI Quick Builds, November 16, 2026</p>
+    </div>
+    <figure style="margin:0">
+      <canvas class="thon" id="thon" width="900" height="900" role="img" aria-label="A simulated CTF power spectrum: concentric Thon rings, slightly elliptical"></canvas>
+      <figcaption class="thon-cap">Thon rings, the fingerprint every cryo-EM image carries. Step 1 is about reading them.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============================================================ 2 the pattern -->
+<section class="slide" aria-label="The pattern">
+  <div class="body">
+    <h2>An agent you can supervise</h2>
+    <p class="sub" style="font-size:1.15em">Processing a cryo-EM dataset takes dozens of steps, and each one needs an expert's call. A chatbot asked “which data should we keep?” guesses. ApexAgent doesn't guess, and it doesn't decide either. It follows one loop.</p>
+    <div class="flow">
+      <div><b>Agent proposes</b><span>the next step, using the lab's written rules</span></div>
+      <div><b>Shows its evidence</b><span>every claim names the value it rests on</span></div>
+      <div><b>You approve, edit, or reject</b><span>the person keeps the authority</span></div>
+      <div><b>Decision is logged</b><span>so every result can be traced back</span></div>
+    </div>
+    <p class="sub" style="margin-top:2.2em">Today you'll build the smallest version of it in claude.ai, with no installs. A <span class="term">Skill</span> is a saved set of instructions Claude loads when a task calls for it.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 3 setup -->
+<section class="slide" aria-label="Set up">
+  <div class="body">
+  <div class="where"><span class="n">0</span>Set up</div>
+  <h2>Get the files, add the Skill</h2>
+  <div class="split even" style="margin-top:0.6em">
+    <div class="panel">
+      <p class="kind do">Do this</p>
+      <div class="row" style="margin-bottom:1em">
+        <a class="btn primary" href="materials/cryoem-review.zip" download>Download the Skill (.zip)</a>
+        <a class="btn" href="materials/ctf_results.csv" download>ctf_results.csv</a>
+        <a class="btn" href="materials/class2d_gallery.png" download>class2d_gallery.png</a>
+        <a class="btn" href="materials/class2d_classes.csv" download>class2d_classes.csv</a>
+      </div>
+      <ol class="steps">
+        <li>Open <a href="https://claude.ai">claude.ai</a> and sign in.</li>
+        <li>In <b>Settings → Capabilities</b>, check that <b>Code execution</b> is on.</li>
+        <li>Under <b>Skills</b>, choose <b>Upload skill</b>, pick <code>cryoem-review.zip</code>, and switch it on.</li>
+        <li>Start a <b>new chat</b>.</li>
+      </ol>
+    </div>
+    <div>
+      <div class="panel">
+        <p class="kind">You should see</p>
+        <p style="margin:0"><b>cryoem-review</b> in your Skills list, with its toggle on.</p>
+      </div>
+      <div class="panel">
+        <p class="kind stuck">If stuck</p>
+        <p style="margin:0 0 0.8em">No Skills menu, or the upload fails? Copy the Skill text, paste it as the first message of a new chat, and add “Follow these instructions for the rest of this chat.”</p>
+        <button data-copy-skill>Copy the Skill text</button>
+      </div>
+    </div>
+  </div>
+  </div>
+</section>
+
+<!-- ============================================================ 4 step 1 do -->
+<section class="slide" aria-label="Step 1: numbers">
+  <div class="body">
+  <div class="where"><span class="n">1</span>Numbers</div>
+  <h2>Which micrographs do we keep?</h2>
+  <p class="sub">The microscope took 40 images (micrographs). CTF estimation scores how much fine detail each one holds, in Å: lower is better. The Skill holds the lab's rule for where to draw the line.</p>
+  <div class="split even">
+    <div class="panel">
+      <p class="kind do">Do this</p>
+      Attach <code>ctf_results.csv</code> and send:
+      <div class="prompt">These are CTF estimation results for 40 micrographs. Which micrographs should we keep?</div>
+      Check the proposal on the next slide, then reply:
+      <div class="prompt" style="margin-bottom:0">Approve.</div>
+    </div>
+    <div class="panel">
+      <p class="kind">You should see</p>
+      <div class="expect">PROPOSAL: select micrographs
+Cutoff: 7.6 Å  (rule: relaxed to p90)
+Keep: 36/40
+Reject (4): mic_012, mic_016, mic_018, mic_038
+Needs your review: mic_007, mic_029
+Approve, edit, or reject?</div>
+      <p style="margin:0.8em 0 0;color:var(--ink-2)">After you approve: a one-line <code>DECISION | …</code> log entry.</p>
+    </div>
+  </div>
+  </div>
+</section>
+
+<!-- ============================================================ 5 step 1 check -->
+<section class="slide" aria-label="Step 1: check it yourself">
+  <div class="where"><span class="n">1</span>Numbers</div>
+  <h2>Don't take its word for it</h2>
+  <div class="split side">
+    <div>
+      <div class="tiles">
+        <div class="panel tile hot"><div class="v" id="tCut">7.6 Å</div><div class="k">your cutoff</div></div>
+        <div class="panel tile"><div class="v" id="tKeep">36 / 40</div><div class="k">micrographs kept</div></div>
+        <div class="panel tile"><div class="v" id="tP90">–</div><div class="k">90th percentile</div></div>
+        <div class="panel tile"><div class="v" id="tRule">–</div><div class="k">the Skill's cutoff</div></div>
+      </div>
+      <div class="panel chart">
+        <div class="legend" aria-hidden="true">
+          <span><span class="sw" style="background:var(--data)"></span>Kept</span>
+          <span><span class="sw" style="background:var(--rejected)"></span>Rejected</span>
+          <span><span class="sw" style="background:var(--review);border-radius:50%"></span>Fitted into noise?</span>
+          <span>◆ Strong astigmatism</span>
+        </div>
+        <svg id="ctfChart" viewBox="0 0 1400 400" role="img" aria-label="CTF fit limit per micrograph, sorted, with the cutoff line"></svg>
+        <div class="tip" id="ctfTip"></div>
+        <div class="controls">
+          <label for="cut">Cutoff <b id="cutVal">7.6</b> Å</label>
+          <input id="cut" type="range" min="3.5" max="20" step="0.1" value="7.6">
+          <button data-cut="rule">The Skill's rule</button>
+          <button data-cut="6">6 Å floor</button>
+          <button data-cut="5">5 Å</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>What the rule says</h3>
+      <p style="margin:0 0 1.2em;color:var(--ink-2);font-size:0.9em">Start at 6 Å. If the data is worse than that, relax to the 90th percentile (never past 10 Å) so the run doesn't lose most of its data. Never tighten on its own.</p>
+      <h3>What it hands back to you</h3>
+      <ul class="flags" id="ctfFlags"></ul>
+      <p class="pause"><b>Pause here.</b> Hands up when Claude has written its <code>DECISION</code> line.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 6 step 2 do -->
+<section class="slide" aria-label="Step 2: images">
+  <div class="body">
+  <div class="where"><span class="n">2</span>Images</div>
+  <h2>Which 2D classes do we keep?</h2>
+  <p class="sub">Thousands of particle images are grouped into 50 class averages. No number says which are real ribosomes and which are membrane, ice, or noise. It's a <b>visual judgement</b>. In ApexAgent a vision model makes it, and plain code checks the answer.</p>
+  <div class="split even">
+    <div class="panel">
+      <p class="kind do">Do this</p>
+      In the <b>same chat</b>, attach <code>class2d_gallery.png</code> and <code>class2d_classes.csv</code>, then send:
+      <div class="prompt">These are 2D class averages of ribosomes from cryo-electron tomograms. Which classes should we keep?</div>
+      While it works, go to the next slide and <b>pick the classes you would keep</b>.
+    </div>
+    <div>
+      <div class="panel">
+        <p class="kind">You should see</p>
+        <div class="expect">PROPOSAL: select 2D classes
+Keep (n classes, p% of particles): …
+Reject: 15: membrane/edge, 9: blob/ice, …
+Unsure: …
+Approve, edit, or reject?</div>
+      </div>
+      <div class="panel">
+        <p class="kind stuck">If stuck</p>
+        <p style="margin:0">No proposal format? The Skill isn't loaded. Check its toggle, or paste the Skill text (Set up slide).</p>
+      </div>
+    </div>
+  </div>
+  </div>
+</section>
+
+<!-- ============================================================ 7 step 2 gallery -->
+<section class="slide" aria-label="Step 2: pick and compare">
+  <div class="where"><span class="n">2</span>Images</div>
+  <h2>Your eye against Claude's</h2>
+  <div class="split side">
+    <div>
+      <div class="row" style="margin-bottom:10px">
+        <label><input type="checkbox" id="hideEmpty"> Hide the <span id="nEmpty"></span> empty classes</label>
+        <button id="clearPicks">Clear my picks</button>
+        <button id="showKey">Show the expert's pick</button>
+      </div>
+      <div class="gallery" id="gallery"></div>
+    </div>
+    <div class="panel">
+      <h3>Your picks</h3>
+      <div class="mini">
+        <div><div class="v" id="gMine">0</div><div class="k">classes</div></div>
+        <div><div class="v" id="gMineP">0%</div><div class="k">of particles</div></div>
+      </div>
+      <h3 style="margin-top:1.3em">Check Claude's answer</h3>
+      <p style="margin:0;color:var(--ink-2);font-size:0.88em">Paste the list after “Keep”. This runs the same check ApexAgent runs on a model's answer: numbers start at 1, stay in range, and appear once.</p>
+      <div class="checkline">
+        <input id="claudeList" placeholder="e.g. 3, 8, 15" aria-label="Claude's list of classes to keep">
+        <button id="checkList" class="btn primary">Check</button>
+      </div>
+      <div class="verdict" id="verdict" aria-live="polite"></div>
+      <p class="pause"><b>Pause here.</b> Where did you and Claude disagree?</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 8 step 3 -->
+<section class="slide" aria-label="Step 3: push back">
+  <div class="body">
+  <div class="where"><span class="n">3</span>Push back</div>
+  <h2>Ask for something the rules advise against</h2>
+  <div class="split even" style="margin-top:0.6em">
+    <div class="panel">
+      <p class="kind do">Do this</p>
+      <div class="prompt">Edit the micrograph selection: tighten the cutoff to 5 Å.</div>
+      Then confirm, with a reason:
+      <div class="prompt" style="margin-bottom:0">Confirmed. This is a quick test, so we only want the best data.</div>
+    </div>
+    <div class="panel">
+      <p class="kind">You should see</p>
+      <p style="margin:0">Claude doesn't refuse, and it doesn't quietly comply. It names the rule (never tighten below the 6 Å floor) and puts the cost in numbers: <b>36 → 22 micrographs</b>. Once you confirm, it applies the change and logs it as a <b>human override</b>, with your reason.</p>
+      <p style="margin:1em 0 0;color:var(--ink-2)">Try the classes too: “Edit: also keep class 40.” It should show only what changed.</p>
+    </div>
+  </div>
+  <p class="pause" style="font-size:1.15em"><b>That's the whole pattern.</b> The agent did the work and showed its evidence. You kept the authority. Every decision left a record.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 9 builder -->
+<section class="slide" aria-label="Make your own">
+  <h2>Make your own</h2>
+  <p class="sub">Any review step with data, rules, and a person who signs off fits this pattern: instrument QC, a budget variance check, a vendor intake checklist. Fill this in and upload the result the same way.</p>
+  <div class="split even builder">
+    <div class="panel">
+      <label for="bName">Skill name <span>(lowercase, dashes)</span></label>
+      <input id="bName" value="invoice-review">
+      <label for="bWhen">Use it when… <span>(Claude reads this to decide when to load it)</span></label>
+      <input id="bWhen" value="the user shares a table of invoices and asks which ones are ready to pay">
+      <label for="bInputs">Inputs it needs <span>(one per line)</span></label>
+      <textarea id="bInputs">invoice_id
+amount
+po_number
+approver</textarea>
+      <label for="bRules">Your rules <span>(one per line)</span></label>
+      <textarea id="bRules">An invoice with no po_number is not ready to pay.
+Amounts over $10,000 need a second approver.
+Never mark an invoice paid; only propose.</textarea>
+      <label for="bHuman">Always ask the person before… <span>(one per line)</span></label>
+      <textarea id="bHuman">changing a threshold
+including any invoice flagged as missing data</textarea>
+      <div class="row" style="margin-top:1em">
+        <button class="btn primary" id="bZip">Download Skill (.zip)</button>
+        <button id="bCopy">Copy SKILL.md</button>
+      </div>
+    </div>
+    <pre id="skillPreview" aria-label="Generated SKILL.md"></pre>
+  </div>
+</section>
+
+<!-- ============================================================ 10 scale -->
+<section class="slide" aria-label="How it scales">
+  <div class="body">
+    <h2>From one Skill to ApexAgent</h2>
+    <p class="sub" style="font-size:1.1em">You used one layer today. ApexAgent wraps three more around the same propose-and-approve loop and runs full RELION 5 processing on our cluster.</p>
+    <div class="layers">
+      <div class="now"><div class="tag">You built this today</div><h3>Skills</h3><p>Job knowledge: for each processing step, how parameters are derived, what to check, and when to decline. Today's Skill condenses two of them.</p></div>
+      <div><div class="tag"></div><h3>Tools</h3><p>MCP servers let the agent read results straight from the pipeline and submit jobs, instead of reading a file you uploaded.</p></div>
+      <div><div class="tag"></div><h3>Harness</h3><p>A loop that proposes, waits for jobs to finish, reads the results, and proposes again. Autonomy levels set which steps need a person.</p></div>
+      <div><div class="tag"></div><h3>Dashboard</h3><p>Every proposal, its evidence, and its decision log in one place, so one scientist can supervise many runs.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 11 takeaway -->
+<section class="slide" aria-label="Take it with you">
+  <div class="body">
+    <h2>Take it with you</h2>
+    <div class="split even" style="align-items:center;margin-top:1em">
+      <div>
+        <p class="sub" style="margin-bottom:0.4em">This deck, the Skill, the data, and the Skill builder</p>
+        <div class="bigurl"><a href="https://github.com/jtschwar/apex-agent-demo">github.com/jtschwar/apex-agent-demo</a></div>
+        <p class="sub" style="margin:1.6em 0 0.4em">The full agent</p>
+        <div class="bigurl" style="font-size:clamp(18px,1.9vw,34px)"><a href="https://github.com/czimaginginstitute/ApexAgent">github.com/czimaginginstitute/ApexAgent</a></div>
+      </div>
+      <div class="panel">
+        <h3>Try it this week</h3>
+        <p style="margin:0 0 0.8em"><b>Technical:</b> any QC table your instrument or pipeline writes. Write down the rule you already apply in your head, and make the agent show its evidence.</p>
+        <p style="margin:0"><b>Everyday:</b> a checklist you review by hand, like expense reports or intake forms. Use the Skill builder, and keep the “ask before” list short.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<button class="edge prev" id="prev" aria-label="Previous slide"></button>
+<button class="edge next" id="next" aria-label="Next slide"></button>
+<div class="hint" id="hint">Use ← → to move between slides, F for full screen</div>
+<div class="chrome" aria-hidden="true"><span class="count" id="count"></span><div class="bar"><i id="bar"></i></div></div>
+
+<script src="assets/data.js"></script>
+<script>
+"use strict";
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+
+/* ------------------------------------------------------------ deck navigation */
+const deck = $("#deck"), slides = $$(".slide");
+let cur = 0;
+function go(i, push = true) {
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  deck.style.transform = `translateX(${-cur * 100}vw)`;
+  slides.forEach((s, k) => s.setAttribute("aria-hidden", k !== cur));
+  $("#count").textContent = `${cur + 1} / ${slides.length}`;
+  $("#bar").style.width = `${((cur + 1) / slides.length) * 100}%`;
+  $("#prev").style.display = cur ? "" : "none";
+  $("#next").style.display = cur < slides.length - 1 ? "" : "none";
+  if (push) history.replaceState(null, "", `#/${cur + 1}`);
+}
+const fromHash = () => { const m = location.hash.match(/^#\/(\d+)/); return m ? +m[1] - 1 : 0; };
+window.addEventListener("hashchange", () => go(fromHash(), false));
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input, textarea, select") || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (["ArrowRight", "PageDown", " "].includes(e.key)) { e.preventDefault(); go(cur + 1); }
+  else if (["ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); go(cur - 1); }
+  else if (e.key === "Home") go(0);
+  else if (e.key === "End") go(slides.length - 1);
+  else if (e.key === "f" || e.key === "F") document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
+});
+$("#prev").onclick = () => go(cur - 1);
+$("#next").onclick = () => go(cur + 1);
+let tx = null;
+document.addEventListener("touchstart", e => (tx = e.touches[0].clientX), { passive: true });
+document.addEventListener("touchend", e => { if (tx === null) return; const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 60) go(cur + (dx < 0 ? 1 : -1)); tx = null; });
+go(fromHash(), false);
+setTimeout(() => ($("#hint").style.opacity = 0), 5000);
+
+function copyText(text, btn) {
+  const done = () => { const t = btn.textContent; btn.textContent = "Copied"; setTimeout(() => (btn.textContent = t), 1400); };
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(done);
+  else { const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove(); done(); }
+}
+$$(".prompt").forEach(p => {
+  const b = document.createElement("button"); b.className = "copy"; b.textContent = "Copy";
+  const text = p.textContent; b.onclick = () => copyText(text, b); p.appendChild(b);
+});
+$$("[data-copy-skill]").forEach(b => (b.onclick = () => copyText(window.SKILL_MD, b)));
+
+/* ------------------------------------------------------------ title: a real CTF */
+(function drawThon() {
+  const c = $("#thon"), g = c.getContext("2d"), n = c.width, img = g.createImageData(n, n);
+  const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  const lambda = 0.0197, cs = 2.7e7, dfU = 14000, dfV = 12600, angAst = 0.6, amp = 0.07;   // 300 kV, units of Å
+  const kmax = 1 / 3.2;                                                                    // disc edge = 3.2 Å
+  const base = dark ? [15, 23, 29] : [244, 246, 247], ink = dark ? [214, 230, 242] : [20, 33, 43];
+  let seed = 7; const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+    const x = (i - n / 2) / (n / 2), y = (j - n / 2) / (n / 2), r = Math.hypot(x, y), p = (j * n + i) * 4;
+    if (r > 1) { img.data[p + 3] = 0; continue; }
+    const k = r * kmax, a = Math.atan2(y, x);
+    const df = 0.5 * (dfU + dfV + (dfU - dfV) * Math.cos(2 * (a - angAst)));
+    const chi = Math.PI * lambda * df * k * k - 0.5 * Math.PI * cs * lambda ** 3 * k ** 4;
+    const ctf = -Math.sqrt(1 - amp * amp) * Math.sin(chi) - amp * Math.cos(chi);
+    const env = Math.exp(-38 * k * k), noise = (rand() - 0.5) * 0.22 * (0.3 + r);
+    const v = Math.max(0, Math.min(1, (ctf * ctf * env + noise * (1 - env * 0.5) + 0.08 * (1 - r)) * 1.15));
+    for (let ch = 0; ch < 3; ch++) img.data[p + ch] = base[ch] + (ink[ch] - base[ch]) * v;
+    img.data[p + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+})();
+
+/* ------------------------------------------------------------ step 1: CTF chart */
+const CTF = window.CTF.slice().sort((a, b) => a.ctf_max_resolution_A - b.ctf_max_resolution_A);
+const fits = CTF.map(r => r.ctf_max_resolution_A);
+function percentile(sorted, q) {            // numpy default: linear interpolation
+  const pos = (sorted.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos);
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+}
+const P90 = percentile(fits, 0.9);
+const RULE = P90 <= 6 ? 6 : Math.min(Math.round(P90 * 10) / 10, 10);
+$("#tP90").textContent = P90.toFixed(2) + " Å";
+$("#tRule").textContent = RULE.toFixed(1) + " Å";
+
+const svg = $("#ctfChart"), NS = "http://www.w3.org/2000/svg";
+const W = 1400, H = 400, M = { l: 52, r: 8, t: 30, b: 30 };
+const yMax = 21, iw = W - M.l - M.r, ih = H - M.t - M.b;
+const y = v => M.t + ih - (v / yMax) * ih;
+const bw = iw / CTF.length;
+function el(tag, attrs, parent = svg) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; }
+for (let v = 0; v <= 20; v += 5) {
+  el("line", { x1: M.l, x2: W - M.r, y1: y(v), y2: y(v), stroke: v ? "var(--rule)" : "var(--axis)", "stroke-width": 1 });
+  el("text", { x: M.l - 10, y: y(v) + 4, "text-anchor": "end" }).textContent = v + " Å";
+}
+el("text", { x: M.l, y: H - 6 }).textContent = "40 micrographs, sorted from best fit to worst";
+function barPath(x, w, top, base) {        // 4px rounded data-end, square at the baseline
+  const r = Math.min(4, w / 2, base - top);
+  return `M${x},${base}V${top + r}Q${x},${top} ${x + r},${top}H${x + w - r}Q${x + w},${top} ${x + w},${top + r}V${base}Z`;
+}
+const bars = CTF.map((r, i) => {
+  const x = M.l + i * bw + 1, w = bw - 2, top = y(r.ctf_max_resolution_A), cx = x + w / 2;
+  const g = el("g", { tabindex: 0, role: "img", "aria-label": `${r.micrograph}: ${r.ctf_max_resolution_A.toFixed(1)} Å, figure of merit ${r.ctf_figure_of_merit}` });
+  el("rect", { x: x - 1, y: M.t, width: bw, height: ih, fill: "transparent" }, g);   // hit target larger than the mark
+  const p = el("path", { d: barPath(x, w, top, y(0)) }, g);
+  let lift = 12;
+  if (r.ctf_figure_of_merit < 0.05) { el("circle", { cx, cy: top - lift, r: 7, fill: "var(--review)", stroke: "var(--panel)", "stroke-width": 2 }, g); lift += 18; }
+  if (r.astigmatism_A > 1000) el("text", { x: cx, y: top - lift + 5, "text-anchor": "middle", style: "fill:var(--ink);font-size:15px" }, g).textContent = "◆";
+  g.addEventListener("pointerenter", () => showTip(r, cx, top));
+  g.addEventListener("focus", () => showTip(r, cx, top));
+  g.addEventListener("pointerleave", hideTip); g.addEventListener("blur", hideTip);
+  return { r, p };
+});
+const cutLine = el("line", { x1: M.l, x2: W - M.r, stroke: "var(--ink)", "stroke-width": 2, "stroke-dasharray": "7 5" });
+const cutLabel = el("text", { x: M.l + 8, "text-anchor": "start", style: "fill:var(--ink);font-weight:700;font-size:15px" });
+const tip = $("#ctfTip");
+function showTip(r, sx, sy) {
+  const box = svg.getBoundingClientRect(), host = svg.parentElement.getBoundingClientRect(), k = box.width / W;
+  tip.innerHTML = `<b>${r.micrograph}</b>: fit ${r.ctf_max_resolution_A.toFixed(1)} Å, FOM ${r.ctf_figure_of_merit}, astigmatism ${r.astigmatism_A} Å`;
+  tip.style.left = Math.min(Math.max(box.left - host.left + sx * k - 150, 0), host.width - 380) + "px";
+  tip.style.top = (box.top - host.top + sy * k - 46) + "px"; tip.style.opacity = 1;
+}
+function hideTip() { tip.style.opacity = 0; }
+function setCut(c) {
+  c = Math.round(c * 10) / 10;
+  $("#cut").value = c; $("#cutVal").textContent = c.toFixed(1);
+  let kept = 0;
+  bars.forEach(({ r, p }) => { const k = r.ctf_max_resolution_A <= c; kept += k; p.setAttribute("fill", k ? "var(--data)" : "var(--rejected)"); });
+  cutLine.setAttribute("y1", y(c)); cutLine.setAttribute("y2", y(c));
+  cutLabel.setAttribute("y", y(c) - 8); cutLabel.textContent = `cutoff ${c.toFixed(1)} Å`;
+  $("#tCut").textContent = c.toFixed(1) + " Å";
+  $("#tKeep").textContent = `${kept} / ${CTF.length}`;
+}
+$("#cut").addEventListener("input", e => setCut(+e.target.value));
+$$("[data-cut]").forEach(b => (b.onclick = () => setCut(b.dataset.cut === "rule" ? RULE : +b.dataset.cut)));
+setCut(RULE);
+const flags = [];
+CTF.filter(r => r.ctf_figure_of_merit < 0.05).forEach(r => flags.push(`<span class="sw" style="background:var(--review);border-radius:50%"></span><b>${r.micrograph}</b>: the fit looks good (${r.ctf_max_resolution_A.toFixed(1)} Å), but the figure of merit is ${r.ctf_figure_of_merit}. Probably fitted into noise, so it comes to you.`));
+CTF.filter(r => r.astigmatism_A > 1000).forEach(r => flags.push(`◆ <b>${r.micrograph}</b>: astigmatism ${r.astigmatism_A} Å. Reported, not filtered: it points at the microscope's alignment.`));
+$("#ctfFlags").innerHTML = flags.map(f => `<li>${f}</li>`).join("");
+
+/* ------------------------------------------------------------ step 2: gallery */
+// Reference selection by the presenters; shown only when "Show the expert's pick" is pressed.
+const EXPERT_KEEP = [12, 22, 26, 33, 37, 43, 48, 49];
+const CLASSES = window.CLASSES, N = CLASSES.length;
+const mine = new Set();
+const gallery = $("#gallery");
+$("#nEmpty").textContent = CLASSES.filter(c => c.empty === "yes").length;
+CLASSES.forEach(c => {
+  const b = document.createElement("button");
+  b.className = "cls" + (c.empty === "yes" ? " empty" : ""); b.dataset.k = c.class;
+  b.setAttribute("aria-pressed", "false");
+  b.setAttribute("aria-label", `Class ${c.class}, ${(100 * c.particle_fraction).toFixed(1)}% of particles`);
+  b.innerHTML = `<img src="assets/classes/class_${String(c.class).padStart(2, "0")}.png" alt=""><div class="cap"><b>${c.class}</b><span>${(100 * c.particle_fraction).toFixed(1)}%</span></div>`;
+  b.onclick = () => { mine.has(c.class) ? mine.delete(c.class) : mine.add(c.class); refreshMine(); };
+  gallery.appendChild(b);
+});
+const share = ks => [...ks].reduce((s, k) => s + CLASSES[k - 1].particle_fraction, 0);
+function refreshMine() {
+  $$(".cls", gallery).forEach(b => b.setAttribute("aria-pressed", mine.has(+b.dataset.k)));
+  $("#gMine").textContent = mine.size;
+  $("#gMineP").textContent = (100 * share(mine)).toFixed(0) + "%";
+}
+$("#hideEmpty").onchange = e => gallery.classList.toggle("hide-empty", e.target.checked);
+$("#clearPicks").onclick = () => { mine.clear(); refreshMine(); };
+$("#showKey").onclick = () => {
+  const head = `Expert's pick: <b>${EXPERT_KEEP.join(", ")}</b> (${(100 * share(EXPERT_KEEP)).toFixed(0)}% of particles)`;
+  if (mine.size) $("#verdict").innerHTML = head + "<br>" + compare([...EXPERT_KEEP], "the expert", "you", [...mine]);
+  else { EXPERT_KEEP.forEach(k => mine.add(k)); refreshMine(); $("#verdict").innerHTML = head + "."; }
+};
+// The same check ApexAgent runs on a model's answer (apex_agent/jobs/select_classes.py:
+// validate_selection): class numbers are 1-indexed, in range, and listed once.
+function validate(raw) {
+  const errors = [], warnings = [], seen = new Set(), out = [];
+  const parts = raw.replace(/[\[\]]/g, "").split(/[\s,;]+/).filter(Boolean);
+  if (!parts.length) errors.push("the list is empty");
+  for (const p of parts) {
+    if (!/^-?\d+$/.test(p)) { errors.push(`“${p}” is not a class number`); continue; }
+    const k = +p;
+    if (k === 0) errors.push("class 0 does not exist: class numbers start at 1, as in the gallery");
+    else if (k < 0 || k > N) errors.push(`class ${k} is out of range (1–${N})`);
+    else if (seen.has(k)) errors.push(`class ${k} is listed twice`);
+    else { seen.add(k); out.push(k); if (CLASSES[k - 1].empty === "yes") warnings.push(`class ${k} is empty (0 particles)`); }
+  }
+  return { errors, warnings, keep: out };
+}
+function compare(a, aName, bName, b) {
+  const A = new Set(a), B = new Set(b);
+  const fmt = xs => xs.length ? xs.sort((x, y) => x - y).join(", ") : "none";
+  return `Both kept: <b>${fmt(a.filter(k => B.has(k)))}</b><br>Only ${aName}: <b>${fmt(a.filter(k => !B.has(k)))}</b><br>Only ${bName}: <b>${fmt(b.filter(k => !A.has(k)))}</b>`;
+}
+$("#checkList").onclick = () => {
+  const { errors, warnings, keep } = validate($("#claudeList").value);
+  $$(".cls", gallery).forEach(b => b.classList.toggle("claude", !errors.length && keep.includes(+b.dataset.k)));
+  let html = errors.length
+    ? `<span class="bad">ApexAgent would send this back:</span> ${errors.join("; ")}.`
+    : `<span class="ok">Valid selection.</span> ${keep.length} classes, ${(100 * share(keep)).toFixed(0)}% of particles, marked “Claude” in the gallery.`;
+  if (warnings.length) html += `<br>Note: ${warnings.join("; ")}.`;
+  if (!errors.length) html += "<br>" + compare(keep, "Claude", "you", [...mine]);
+  $("#verdict").innerHTML = html;
+};
+$("#claudeList").addEventListener("keydown", e => { if (e.key === "Enter") $("#checkList").click(); });
+
+/* ------------------------------------------------------------ Skill builder */
+const lines = id => $(id).value.split("\n").map(s => s.trim()).filter(Boolean);
+const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "my-review";
+function buildSkill() {
+  const name = slug($("#bName").value), when = $("#bWhen").value.trim();
+  const inputs = lines("#bInputs"), rules = lines("#bRules"), human = lines("#bHuman");
+  return `---
+name: ${name}
+description: Review data and propose a decision for a person to approve. Use when ${when}.
+---
+
+# ${name}: propose, show evidence, wait for approval
+
+You do **not** make decisions. You make **proposals** that a person approves, edits,
+or rejects.
+
+## Required inputs
+${inputs.map(s => "- `" + s + "`").join("\n")}
+
+If any required input is missing, say exactly which one and why it is needed. Do not guess.
+
+## Rules
+${rules.map((s, i) => `${i + 1}. ${s}`).join("\n")}
+
+## Always ask before
+${human.map(s => "- " + s).join("\n")}
+
+If asked to do something the rules advise against, do not refuse and do not silently
+comply: state the rule, show the consequence with numbers, and ask the person to confirm.
+
+## Every proposal
+- Names the field and value behind each claim. No claim without evidence.
+- Computes with code when it can; never estimates counts or totals.
+- Ends with exactly: \`Approve, edit, or reject?\`
+
+## After the person answers
+Apply any edit and show only what changed. After an explicit approval, write one line:
+\`DECISION | <what> | <final value> | <rule or "human override"> | <reason>\`
+`;
+}
+function refreshSkill() { $("#skillPreview").textContent = buildSkill(); }
+$$(".builder input, .builder textarea").forEach(e => e.addEventListener("input", refreshSkill));
+refreshSkill();
+$("#bCopy").onclick = e => copyText(buildSkill(), e.currentTarget);
+
+// Minimal store-only ZIP writer, enough for one SKILL.md inside its folder.
+function crc32(bytes) {
+  let c, crc = 0xffffffff;
+  for (let i = 0; i < bytes.length; i++) {
+    c = (crc ^ bytes[i]) & 0xff;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    crc = (crc >>> 8) ^ c;
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+function zipOne(path, text) {
+  const enc = new TextEncoder(), name = enc.encode(path), data = enc.encode(text), crc = crc32(data);
+  const local = new DataView(new ArrayBuffer(30)), central = new DataView(new ArrayBuffer(46)), end = new DataView(new ArrayBuffer(22));
+  local.setUint32(0, 0x04034b50, true); local.setUint16(4, 20, true); local.setUint16(12, 0x21, true);   // date 1980-01-01
+  local.setUint32(14, crc, true); local.setUint32(18, data.length, true); local.setUint32(22, data.length, true); local.setUint16(26, name.length, true);
+  central.setUint32(0, 0x02014b50, true); central.setUint16(4, 20, true); central.setUint16(6, 20, true); central.setUint16(14, 0x21, true);
+  central.setUint32(16, crc, true); central.setUint32(20, data.length, true); central.setUint32(24, data.length, true); central.setUint16(28, name.length, true);
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, 1, true); end.setUint16(10, 1, true);
+  end.setUint32(12, 46 + name.length, true); end.setUint32(16, 30 + name.length + data.length, true);
+  return new Blob([local, name, data, central, name, end], { type: "application/zip" });
+}
+$("#bZip").onclick = () => {
+  const name = slug($("#bName").value), a = document.createElement("a");
+  a.href = URL.createObjectURL(zipOne(`${name}/SKILL.md`, buildSkill()));
+  a.download = `${name}.zip`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
+</script>
+</body>
+</html>
