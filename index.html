@@ -127,10 +127,6 @@ ol.steps { margin: 0; padding-left: 1.3em; } ol.steps li { margin: 0.3em 0; }
 }
 
 /* ---------------------------------------------------------------- CTF chart */
-.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
-.tile .v { font-size: clamp(24px, 2.4vw, 44px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; }
-.tile .k { font-size: 0.85em; color: var(--ink-2); }
-.tile.hot .v { color: var(--data); }
 .chart { position: relative; }
 .chart svg { width: 100%; height: auto; max-height: 46vh; display: block; }
 svg text { font: 13px var(--sans); fill: var(--muted); font-variant-numeric: tabular-nums; }
@@ -195,13 +191,31 @@ svg text { font: 13px var(--sans); fill: var(--muted); font-variant-numeric: tab
 .builder textarea { min-height: 5.6em; resize: vertical; }
 #skillPreview { margin: 0; max-height: calc(100dvh - 280px); overflow: auto; background: var(--sunk); border-radius: 12px; padding: 1em 1.2em; font: 0.76em/1.55 var(--mono); white-space: pre-wrap; }
 
-/* ---------------------------------------------------------------- scale: the run timeline */
-.tiles .panel + .panel { margin-top: 0; }
-.tip.wide { white-space: normal; width: min(440px, 80vw); line-height: 1.45; }
-.tip .log { display: block; margin-top: 0.4em; font: 12px/1.5 var(--mono); opacity: 0.85; }
-.dia { color: var(--ink); margin-right: 0.35em; }
-#runChart { max-height: 34vh; }
-.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* ---------------------------------------------------------------- automate: one turn of the loop */
+.auto { display: grid; grid-template-columns: auto repeat(6, minmax(0, 1fr)); column-gap: clamp(10px, 1.2vw, 22px); row-gap: 0.45em; font-size: 0.88em; }
+.auto > div { color: var(--ink-2); line-height: 1.35; }
+.auto .lh { font-weight: 700; color: var(--ink); padding-right: 0.3em; }
+.auto .st { position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 0.35em; color: var(--ink);
+  padding-bottom: 0.5em; margin-bottom: 0.2em; border-bottom: 3px solid var(--rule); }
+.auto .st b { font-size: 1.12em; letter-spacing: -0.01em; line-height: 1.2; }
+.auto .st:not(.last)::after { content: "→"; position: absolute; right: calc(-0.5 * clamp(10px, 1.2vw, 22px) - 0.45em); top: 0.1em; color: var(--muted); }
+.auto .tag { font-size: 0.78em; font-weight: 700; border-radius: 5px; padding: 0.05em 0.5em; background: var(--sunk); color: var(--ink-2); }
+.auto .ai { border-bottom-color: var(--data); }
+.auto .ai .tag { background: var(--data); color: var(--data-ink); }
+.auto .gate { border-bottom-color: var(--ok); }
+.auto .gate .tag { background: var(--ok); color: #fff; }
+.auto .hl { color: var(--ink); font-weight: 600; }
+.again { margin: 0.5em 0 0.9em; color: var(--muted); font-size: 0.85em; text-align: right; }
+.autobottom h3 { margin: 0 0 0.5em; font-size: 1.1em; }
+.rules { margin: 0; padding: 0; list-style: none; color: var(--ink-2); font-size: 0.92em; }
+.rules li + li { margin-top: 0.5em; }
+.rules b { color: var(--ink); }
+.dial { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 3px solid var(--rule); }
+.dial .lv { padding: 0.6em 0.8em 0 0; font-size: 0.9em; border-top: 3px solid transparent; margin-top: -3px; }
+.dial .lv b { display: block; color: var(--ink); }
+.dial .lv span { color: var(--ink-2); font-size: 0.92em; }
+.dial .lv.on { border-top-color: var(--ok); }
+@media (max-width: 900px) { .auto { grid-template-columns: 1fr; } .auto .lh, .auto .st::after { display: none; } }
 .bigurl { font-size: clamp(20px, 2.1vw, 40px); font-weight: 700; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 </style>
 </head>
@@ -456,10 +470,60 @@ Approve, edit, or reject?</div>
   </div>
 </section>
 
-<!-- ============================================================ 9 builder -->
+<!-- ============================================================ 9 automate -->
+<section class="slide" aria-label="How you automate it">
+  <div class="body">
+    <h2>How you automate it</h2>
+    <p class="sub" style="font-size:1.05em">Today you did everything around Claude's judgement: you brought the file, read the evidence, approved it, and wrote it down. To automate, hand each of those jobs to plain code, and keep the AI for the one step that needs judgement. This is how ApexAgent, the agent behind today's data, is built.</p>
+    <div class="auto" role="table" aria-label="One turn of the loop, today and automated">
+      <div class="lh" role="rowheader"></div>
+      <div class="st" role="columnheader"><span class="tag">code</span><b>Notice new work</b></div>
+      <div class="st" role="columnheader"><span class="tag">code</span><b>Measure it</b></div>
+      <div class="st" role="columnheader"><span class="tag">code</span><b>Check the rules</b></div>
+      <div class="st ai" role="columnheader"><span class="tag">AI</span><b>Judge and propose</b></div>
+      <div class="st gate" role="columnheader"><span class="tag">gate</span><b>Validate, then ask or go</b></div>
+      <div class="st last" role="columnheader"><span class="tag">code</span><b>Act and log</b></div>
+      <div class="lh" role="rowheader">Today</div>
+      <div role="cell">You attached the file</div>
+      <div role="cell">Claude ran code on your table</div>
+      <div role="cell">The Skill's rules, applied by Claude</div>
+      <div role="cell" class="hl">Claude proposed a cutoff and a keep list</div>
+      <div role="cell">You approved, edited, or rejected</div>
+      <div role="cell">You kept one log line</div>
+      <div class="lh" role="rowheader">Automated</div>
+      <div role="cell">A watcher sees a job finish</div>
+      <div role="cell">Parsers turn every output into numbers and images</div>
+      <div role="cell">Quality checks written as code, like the 6&nbsp;Å floor</div>
+      <div role="cell" class="hl">The model reviews the evidence and picks from a fixed menu of next steps</div>
+      <div role="cell">Code rejects invented numbers; the autonomy level decides who approves</div>
+      <div role="cell">Submits the next job, writes the decision to a dashboard</div>
+    </div>
+    <p class="again" aria-hidden="true">↻ repeat for every job until the 3D structure is done</p>
+    <div class="split even autobottom">
+      <div>
+        <h3>Three rules for building your own</h3>
+        <ul class="rules">
+          <li><b>Give it hands.</b> Tools it can call to read data and run steps. ApexAgent has 48, and also offers them as an MCP server, a standard way to plug tools into any AI.</li>
+          <li><b>Hand it measurements, not raw files,</b> and check its answer in code before anything runs.</li>
+          <li><b>Decide where it must ask,</b> then loosen that only as it earns trust.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>The gate is a dial</h3>
+        <div class="dial" role="list">
+          <div role="listitem" class="lv"><b>Ask before every step</b><span>Where today's session sat</span></div>
+          <div role="listitem" class="lv"><b>Ask only on judgement calls</b><span>Cutoffs, which groups to keep</span></div>
+          <div role="listitem" class="lv on"><b>Run, and log everything</b><span>How ApexAgent runs now: start to finish, every decision logged for you to check</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ 10 builder -->
 <section class="slide" aria-label="Make your own">
   <h2>Make your own</h2>
-  <p class="sub">Any review step with data, rules, and a person who signs off fits this pattern: instrument QC, a budget variance check, a vendor intake checklist. Fill this in and upload the result the same way.</p>
+  <p class="sub">Every agent starts as one gated step, like the one you ran today. Any review with data, rules, and a person who signs off fits: instrument QC, a budget variance check, a vendor intake checklist. Fill this in and upload the result the same way.</p>
   <div class="split even builder">
     <div class="panel">
       <label for="bName">Skill name <span>(lowercase, dashes)</span></label>
@@ -484,31 +548,6 @@ including any invoice flagged as missing data</textarea>
       </div>
     </div>
     <pre id="skillPreview" aria-label="Generated SKILL.md"></pre>
-  </div>
-</section>
-
-<!-- ============================================================ 10 scale -->
-<section class="slide" aria-label="How it scales">
-  <div class="body">
-    <h2>From one Skill to ApexAgent</h2>
-    <p class="sub" style="font-size:1.05em">Today you ran one slice of it: the review rules, packed into a Skill. This is the whole agent processing the photos behind today's groups. A person set it up (3 decisions), then it ran on its own.</p>
-    <div class="tiles">
-      <div class="panel tile hot"><div class="v" id="rDur"></div><div class="k">from 24 microscope movies to a 3D structure</div></div>
-      <div class="panel tile"><div class="v" id="rJobs"></div><div class="k">jobs it planned, ran on the cluster, and checked</div></div>
-      <div class="panel tile"><div class="v" id="rCalls"></div><div class="k">judgement calls, each with its reasoning logged</div></div>
-      <div class="panel tile"><div class="v" id="rRes"></div><div class="k">finest detail in the final 3D map</div></div>
-    </div>
-    <div class="legend" aria-hidden="true">
-      <span><i class="sw" style="background:var(--data)"></i>A job running on the computing cluster</span>
-      <span><span class="dia">◆</span>A judgement call the agent made and logged</span>
-      <span>Gaps: the agent reading results and deciding what to run next</span>
-    </div>
-    <div class="chart" id="runHost">
-      <svg id="runChart" viewBox="0 0 1400 300" role="img" aria-label="Timeline of the ApexAgent run: four phases of jobs over 2 hours 21 minutes, with judgement calls marked"></svg>
-      <div class="tip wide" id="runTip"></div>
-    </div>
-    <p class="sub" style="margin:1em 0 0">What turns a Skill into an agent: <b>hands</b> (tools that submit jobs and read every result), <b>a loop</b> (propose, run, check, repeat), <b>gates</b> (an autonomy level; this run was set to autonomous), and <b>a record</b> (every decision, in a dashboard).</p>
-    <ol class="sr" id="runList"></ol>
   </div>
 </section>
 
@@ -800,59 +839,6 @@ $("#checkList").onclick = () => {
   $("#verdict").innerHTML = html;
 };
 $("#claudeList").addEventListener("keydown", e => { if (e.key === "Enter") $("#checkList").click(); });
-
-/* ------------------------------------------------------------ scale: a real ApexAgent run */
-(function runTimeline() {
-  const R = window.RUN, svgR = $("#runChart"), tipR = $("#runTip");
-  const hm = m => `${Math.floor(m / 60)} h ${String(Math.round(m % 60)).padStart(2, "0")} min`;
-  $("#rDur").textContent = hm(R.duration_min);
-  $("#rJobs").textContent = R.n_jobs;
-  $("#rCalls").textContent = R.judgements.length;
-  $("#rRes").textContent = R.final_resolution_A + " Å";
-  const W = 1400, L = 250, Rm = 16, top = 22, lane = 58, H = top + lane * R.phases.length + 34;
-  svgR.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  const x = m => L + (m / R.duration_min) * (W - L - Rm);
-  const mk = (tag, attrs, parent = svgR) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
-  for (let m = 0; m <= R.duration_min; m += 30) {
-    mk("line", { x1: x(m), x2: x(m), y1: top - 8, y2: H - 30, stroke: m ? "var(--rule)" : "var(--axis)", "stroke-width": 1 });
-    mk("text", { x: x(m), y: H - 10, "text-anchor": m ? "middle" : "start" }).textContent = m ? `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}` : "start";
-  }
-  mk("text", { x: x(R.duration_min), y: H - 10, "text-anchor": "end", style: "fill:var(--ink);font-weight:700" }).textContent = "done at " + hm(R.duration_min);
-  const laneY = ph => top + R.phases.indexOf(ph) * lane;
-  R.phases.forEach(ph => mk("text", { x: 0, y: laneY(ph) + lane / 2 + 5, style: "fill:var(--ink-2);font-size:15px" }).textContent = ph);
-  function show(html, sx, sy) {
-    const box = svgR.getBoundingClientRect(), host = $("#runHost").getBoundingClientRect(), k = box.width / W;
-    tipR.innerHTML = html;
-    const w = tipR.offsetWidth, h = tipR.offsetHeight;
-    tipR.style.left = Math.min(Math.max(box.left - host.left + sx * k - w / 2, 0), host.width - w) + "px";
-    tipR.style.top = Math.max(box.top - host.top + sy * k - h - 12, -h) + "px"; tipR.style.opacity = 1;
-  }
-  const hide = () => (tipR.style.opacity = 0);
-  const hook = (g, html, sx, sy) => {
-    g.addEventListener("pointerenter", () => show(html, sx, sy)); g.addEventListener("focus", () => show(html, sx, sy));
-    g.addEventListener("pointerleave", hide); g.addEventListener("blur", hide);
-  };
-  const esc = t => t.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
-  R.steps.forEach(st => {
-    const x0 = x(st.start), w = Math.max(x(st.end) - x0 - 2, 3), cy = laneY(st.phase) + lane / 2 + 6;
-    const mins = st.end - st.start, label = `${st.label}: ${mins < 1 ? "under a minute" : Math.round(mins) + " min"}`;
-    const g = mk("g", { tabindex: 0, role: "img", "aria-label": label });
-    mk("rect", { x: x0 - 3, y: cy - 16, width: w + 6, height: 32, fill: "transparent" }, g);   // hit target larger than the mark
-    mk("rect", { x: x0, y: cy - 10, width: w, height: 20, rx: Math.min(4, w / 2), fill: "var(--data)" }, g);
-    hook(g, `<b>${esc(st.label)}</b><br>${mins < 1 ? "Under a minute" : Math.round(mins) + " min"} · <code>${esc(st.job_type || st.key)}</code>`, x0 + w / 2, cy - 10);
-  });
-  const lastX = {};                                   // calls logged seconds apart: keep the diamonds apart
-  R.judgements.forEach(j => {
-    const cx = Math.max(x(j.t), (lastX[j.phase] ?? -99) + 17), cy = laneY(j.phase) + 12;
-    lastX[j.phase] = cx;
-    const g = mk("g", { tabindex: 0, role: "img", "aria-label": `Judgement call: ${j.what}` });
-    mk("circle", { cx, cy, r: 13, fill: "transparent" }, g);
-    mk("path", { d: `M${cx},${cy - 8}L${cx + 7},${cy}L${cx},${cy + 8}L${cx - 7},${cy}Z`, fill: "var(--ink)", stroke: "var(--paper)", "stroke-width": 2 }, g);
-    hook(g, `<b>${esc(j.what)}</b><span class="log">${esc(j.reason)}</span>`, cx, cy - 8);
-  });
-  $("#runList").innerHTML = R.steps.map(st => `<li>${esc(st.label)}, ${Math.round(st.end - st.start)} min</li>`).join("") +
-    R.judgements.map(j => `<li>Judgement call at ${Math.round(j.t)} min: ${esc(j.what)}. ${esc(j.reason)}</li>`).join("");
-})();
 
 /* ------------------------------------------------------------ Skill builder */
 const lines = id => $(id).value.split("\n").map(s => s.trim()).filter(Boolean);

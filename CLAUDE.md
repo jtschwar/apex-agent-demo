@@ -98,8 +98,14 @@ the repo): RELION 3.0 tutorial dataset, β-galactosidase, 24 movies, autonomy `a
 - `APEX_KEEP` in `index.html` (`[1, 2, 5, 6, 8, 14, 16]`) is ApexAgent's own vision-model
   selection from `apex.db` (table `classselection`), not a human answer. In a Claude Code
   test of the Skill (2026-11-15) Claude kept 1,2,5,6,8,14,15,16, with 3, 7 and 13 unsure.
-- Slide 10's timeline and numbers (2 h 21 min, 23 jobs, 8 judgement calls, 61 decisions,
-  3 human, 3.2 Å) come from `materials/apex_run.json`. Re-export with
+- Slide 9 ("How you automate it") is one turn of ApexAgent's post-job loop, from the
+  coordinator's docstring (`apex_agent/agents/coordinator/__init__.py`): watcher → parse →
+  quality checks (code) → model reviews evidence (AI) → validate + autonomy gate → submit and
+  log. Autonomy levels are `confirm_each_stage | confirm_decisions_only | autonomous`
+  (`apex_agent/tools/gating.py`); "48 tools" is the count of `@mcp.tool` in
+  `apex_agent/mcp/server.py`. The slide quotes no per-run numbers (they vary by
+  dataset); ApexAgent now runs fully automatic. `materials/apex_run.json` is still exported
+  but no slide uses it; the timeline chart was dropped 2026-11-15. Re-export with
   `python3 scripts/export_apex_run.py ~/run001 && python3 scripts/build_data.py`.
 
 ## Where the rules come from
