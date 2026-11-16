@@ -216,6 +216,14 @@ svg text { font: 13px var(--sans); fill: var(--muted); font-variant-numeric: tab
 .dial .lv span { color: var(--ink-2); font-size: 0.92em; }
 .dial .lv.on { border-top-color: var(--ok); }
 @media (max-width: 900px) { .auto { grid-template-columns: 1fr; } .auto .lh, .auto .st::after { display: none; } }
+.more { white-space: nowrap; font-weight: 600; }
+.h3more { font-size: 0.78em; margin-left: 0.6em; }
+.deeper { margin-top: 1.6em; padding-top: 1.2em; border-top: 1px solid var(--rule); }
+.deeper h3 { margin: 0 0 0.5em; font-size: 1.05em; }
+.deeper ul { margin: 0; padding: 0; list-style: none; font-size: 0.9em; }
+.deeper li + li { margin-top: 0.35em; }
+.deeper a { font-weight: 600; }
+.deeper span { color: var(--ink-2); }
 .bigurl { font-size: clamp(20px, 2.1vw, 40px); font-weight: 700; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 </style>
 </head>
@@ -313,7 +321,7 @@ svg text { font: 13px var(--sans); fill: var(--muted); font-variant-numeric: tab
     <figure><img src="assets/micrographs/20170629_00022_frameImage.jpg" alt="A real cryo-EM micrograph: grey speckle of densely packed molecules and a few black dots"><figcaption><b>A real photo</b><br>Each grey speck is one copy of the molecule</figcaption></figure>
     <figure><canvas id="ringSharp" width="560" height="560" role="img" aria-label="Ring pattern of a sharp photo"></canvas><figcaption id="capSharp"></figcaption></figure>
     <figure><canvas id="ringBlur" width="560" height="560" role="img" aria-label="Ring pattern of a blurry photo"></canvas><figcaption id="capBlur"></figcaption></figure>
-    <p class="explain-note">The software reads sharpness from each photo's <b>ring pattern</b>. The farther out the rings reach, the finer the detail the photo holds.</p>
+    <p class="explain-note">The software reads sharpness from each photo's <b>ring pattern</b>. The farther out the rings reach, the finer the detail the photo holds. <a class="more" href="https://guide.cryosparc.com/processing-data/all-job-types-in-cryosparc/ctf-estimation" target="_blank" rel="noopener">How CTF estimation works ↗</a></p>
   </div>
   <div class="split even" style="align-items:stretch">
     <div class="panel">
@@ -384,7 +392,7 @@ Approve, edit, or reject?</div>
   <div class="body">
   <div class="where"><span class="n">2</span>Images</div>
   <h2>Which groups show the real molecule?</h2>
-  <p class="sub">Each photo holds hundreds of copies of one molecule, here an enzyme called β-galactosidase. One copy is too faint to see, so the software sorts look-alike copies into groups and averages each group. These averages are called <span class="term">2D classes</span>.</p>
+  <p class="sub">Each photo holds hundreds of copies of one molecule, here an enzyme called β-galactosidase. One copy is too faint to see, so the software sorts look-alike copies into groups and averages each group. These averages are called <span class="term">2D classes</span>. <a class="more" href="https://guide.cryosparc.com/processing-data/all-job-types-in-cryosparc/particle-curation/job-2d-classification" target="_blank" rel="noopener">How 2D classification works ↗</a></p>
   <div class="avgstrip" aria-label="Five single copies look like noise; the average of their group shows the molecule; a junk group shows a smear">
     <figure><div class="row5"><img src="assets/particles/class_01_p1.png" alt=""><img src="assets/particles/class_01_p2.png" alt=""><img src="assets/particles/class_01_p3.png" alt=""><img src="assets/particles/class_01_p4.png" alt=""><img src="assets/particles/class_01_p5.png" alt=""></div><figcaption>Five single copies from group 1, turned to line up. Mostly noise.</figcaption></figure>
     <span class="arrow" aria-hidden="true">→</span>
@@ -474,7 +482,7 @@ Approve, edit, or reject?</div>
 <section class="slide" aria-label="How you automate it">
   <div class="body">
     <h2>How you automate it</h2>
-    <p class="sub" style="font-size:1.05em">Today you did everything around Claude's judgement: you brought the file, read the evidence, approved it, and wrote it down. To automate, hand each of those jobs to plain code, and keep the AI for the one step that needs judgement. This is how ApexAgent, the agent behind today's data, is built.</p>
+    <p class="sub" style="font-size:1.05em">Today you did everything around Claude's judgement: you brought the file, read the evidence, approved it, and wrote it down. To automate, hand each of those jobs to plain code, and keep the AI for the one step that needs judgement. This is how ApexAgent, the agent behind today's data, is built. <a class="more" href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank" rel="noopener">Frameworks like LangGraph give you this loop ↗</a></p>
     <div class="auto" role="table" aria-label="One turn of the loop, today and automated">
       <div class="lh" role="rowheader"></div>
       <div class="st" role="columnheader"><span class="tag">code</span><b>Notice new work</b></div>
@@ -503,13 +511,13 @@ Approve, edit, or reject?</div>
       <div>
         <h3>Three rules for building your own</h3>
         <ul class="rules">
-          <li><b>Give it hands.</b> Tools it can call to read data and run steps. ApexAgent has 48, and also offers them as an MCP server, a standard way to plug tools into any AI.</li>
+          <li><b>Give it hands.</b> Tools it can call to read data and run steps. ApexAgent has 48, and also offers them as an <a href="https://modelcontextprotocol.io/docs/getting-started/intro" target="_blank" rel="noopener">MCP server</a>, a standard way to plug tools into any AI.</li>
           <li><b>Hand it measurements, not raw files,</b> and check its answer in code before anything runs.</li>
           <li><b>Decide where it must ask,</b> then loosen that only as it earns trust.</li>
         </ul>
       </div>
       <div>
-        <h3>The gate is a dial</h3>
+        <h3>The gate is a dial <a class="more h3more" href="https://docs.langchain.com/oss/python/langgraph/interrupts" target="_blank" rel="noopener">How a loop pauses for a person ↗</a></h3>
         <div class="dial" role="list">
           <div role="listitem" class="lv"><b>Ask before every step</b><span>Where today's session sat</span></div>
           <div role="listitem" class="lv"><b>Ask only on judgement calls</b><span>Cutoffs, which groups to keep</span></div>
@@ -566,6 +574,26 @@ including any invoice flagged as missing data</textarea>
         <h3>Try it this week</h3>
         <p style="margin:0 0 0.8em"><b>Technical:</b> any QC table your instrument or pipeline writes. Write down the rule you already apply in your head, and make the agent show its evidence.</p>
         <p style="margin:0"><b>Everyday:</b> a checklist you review by hand, like expense reports or intake forms. Use the Skill builder, and keep the “ask before” list short.</p>
+      </div>
+    </div>
+    <div class="split even deeper">
+      <div>
+        <h3>Go deeper: the science</h3>
+        <ul>
+          <li><a href="https://guide.cryosparc.com/processing-data/all-job-types-in-cryosparc/ctf-estimation" target="_blank" rel="noopener">CTF estimation</a> <span>how software reads sharpness from the ring pattern</span></li>
+          <li><a href="https://guide.cryosparc.com/processing-data/all-job-types-in-cryosparc/particle-curation/job-2d-classification" target="_blank" rel="noopener">2D classification</a> <span>how look-alike copies are sorted and averaged</span></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Go deeper: automating with agents</h3>
+        <ul>
+          <li><a href="https://www.anthropic.com/research/building-effective-agents" target="_blank" rel="noopener">Building effective agents</a> <span>when a fixed workflow is enough and when you need an agent</span></li>
+          <li><a href="https://docs.langchain.com/oss/python/langgraph/overview" target="_blank" rel="noopener">LangGraph</a> <span>a framework for building agent loops that run for hours</span></li>
+          <li><a href="https://docs.langchain.com/oss/python/langgraph/workflows-agents" target="_blank" rel="noopener">Workflows and agents</a> <span>common automation patterns, with code</span></li>
+          <li><a href="https://docs.langchain.com/oss/python/langgraph/interrupts" target="_blank" rel="noopener">Human in the loop</a> <span>pausing a run for a person to approve, edit, or reject</span></li>
+          <li><a href="https://code.claude.com/docs/en/agent-sdk/overview" target="_blank" rel="noopener">Claude Agent SDK</a> <span>Anthropic's kit for building your own agent loop</span></li>
+          <li><a href="https://www.anthropic.com/research/equipping-agents-for-the-real-world-with-agent-skills" target="_blank" rel="noopener">Agent Skills</a> <span>how Skills package expert knowledge</span></li>
+        </ul>
       </div>
     </div>
   </div>
