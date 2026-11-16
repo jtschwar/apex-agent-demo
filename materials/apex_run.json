@@ -1,0 +1,318 @@
+{
+ "target": "beta-galactosidase",
+ "autonomy": "AUTONOMOUS",
+ "duration_min": 141.39,
+ "n_jobs": 23,
+ "n_decisions": 61,
+ "n_human": 3,
+ "final_resolution_A": 3.2,
+ "phases": [
+  "Clean up the photos",
+  "Find and sort the copies",
+  "Build the 3D shape",
+  "Refine and check"
+ ],
+ "steps": [
+  {
+   "key": "import",
+   "label": "Load the 24 microscope movies",
+   "phase": "Clean up the photos",
+   "start": 3.04,
+   "end": 6.91,
+   "jobs": [
+    "Import/job001"
+   ],
+   "job_type": "relion.import.movies"
+  },
+  {
+   "key": "motioncorr",
+   "label": "Undo the shake in each movie",
+   "phase": "Clean up the photos",
+   "start": 7.72,
+   "end": 9.85,
+   "jobs": [
+    "MotionCorr/job002"
+   ],
+   "job_type": "relion.motioncorr.motioncor2"
+  },
+  {
+   "key": "ctffind",
+   "label": "Score each photo's sharpness",
+   "phase": "Clean up the photos",
+   "start": 9.9,
+   "end": 12.21,
+   "jobs": [
+    "CtfFind/job003"
+   ],
+   "job_type": "relion.ctffind.ctffind4"
+  },
+  {
+   "key": "filter_mics",
+   "label": "Drop blurry photos",
+   "phase": "Clean up the photos",
+   "start": 12.73,
+   "end": 15.42,
+   "jobs": [
+    "Select/job004"
+   ],
+   "job_type": "relion.select.onvalue"
+  },
+  {
+   "key": "autopick_bootstrap",
+   "label": "Find the molecules in each photo",
+   "phase": "Find and sort the copies",
+   "start": 17.25,
+   "end": 18.83,
+   "jobs": [
+    "AutoPick/job005"
+   ],
+   "job_type": "relion.autopick.log"
+  },
+  {
+   "key": "extract_preview",
+   "label": "Cut out each copy",
+   "phase": "Find and sort the copies",
+   "start": 19.77,
+   "end": 20.43,
+   "jobs": [
+    "Extract/job006"
+   ],
+   "job_type": "relion.extract"
+  },
+  {
+   "key": "class2d_loop",
+   "label": "Sort copies into look-alike groups (2 tries at once)",
+   "phase": "Find and sort the copies",
+   "start": 20.94,
+   "end": 25.04,
+   "jobs": [
+    "Class2D/job007",
+    "Class2D/job008"
+   ],
+   "job_type": "relion.class2d.vdam"
+  },
+  {
+   "key": "select_particles",
+   "label": "Keep the good groups",
+   "phase": "Find and sort the copies",
+   "start": 33.01,
+   "end": 44.27,
+   "jobs": [
+    "Select/job009"
+   ],
+   "job_type": "pipeliner.select.classes"
+  },
+  {
+   "key": "initialmodel",
+   "label": "Build a first 3D shape",
+   "phase": "Build the 3D shape",
+   "start": 45.73,
+   "end": 50.52,
+   "jobs": [
+    "InitialModel/job010"
+   ],
+   "job_type": "relion.initialmodel"
+  },
+  {
+   "key": "refine3d_consensus",
+   "label": "Sharpen the 3D shape",
+   "phase": "Build the 3D shape",
+   "start": 51.35,
+   "end": 54.12,
+   "jobs": [
+    "Refine3D/job011"
+   ],
+   "job_type": "relion.refine3d"
+  },
+  {
+   "key": "mask_consensus",
+   "label": "Outline the molecule",
+   "phase": "Build the 3D shape",
+   "start": 56.24,
+   "end": 62.65,
+   "jobs": [
+    "MaskCreate/job012"
+   ],
+   "job_type": "relion.maskcreate"
+  },
+  {
+   "key": "class3d",
+   "label": "Sort copies in 3D",
+   "phase": "Build the 3D shape",
+   "start": 62.73,
+   "end": 65.1,
+   "jobs": [
+    "Class3D/job013"
+   ],
+   "job_type": "relion.class3d"
+  },
+  {
+   "key": "select_3d_class",
+   "label": "Keep the best 3D group",
+   "phase": "Build the 3D shape",
+   "start": 66.47,
+   "end": 67.64,
+   "jobs": [
+    "Select/job014"
+   ],
+   "job_type": "pipeliner.select.classes"
+  },
+  {
+   "key": "reextract_full",
+   "label": "Cut out copies again at full detail",
+   "phase": "Refine and check",
+   "start": 69.86,
+   "end": 70.57,
+   "jobs": [
+    "Extract/job015"
+   ],
+   "job_type": "relion.extract"
+  },
+  {
+   "key": "remove_duplicates",
+   "label": "Remove copies counted twice",
+   "phase": "Refine and check",
+   "start": 71.26,
+   "end": 74.61,
+   "jobs": [
+    "Select/job016"
+   ],
+   "job_type": "relion.select.removeduplicates"
+  },
+  {
+   "key": "reconstruct_full",
+   "label": "Rebuild at full detail",
+   "phase": "Refine and check",
+   "start": 79.67,
+   "end": 86.48,
+   "jobs": [
+    "Reconstruct/job017"
+   ],
+   "job_type": "relion.reconstruct"
+  },
+  {
+   "key": "mask_fullres",
+   "label": "Outline the molecule again",
+   "phase": "Refine and check",
+   "start": 87.58,
+   "end": 103.8,
+   "jobs": [
+    "MaskCreate/job018"
+   ],
+   "job_type": "relion.maskcreate"
+  },
+  {
+   "key": "postprocess_check",
+   "label": "Measure the detail (first check)",
+   "phase": "Refine and check",
+   "start": 104.23,
+   "end": 109.19,
+   "jobs": [
+    "PostProcess/job019"
+   ],
+   "job_type": "relion.postprocess"
+  },
+  {
+   "key": "refine3d",
+   "label": "Final refinement",
+   "phase": "Refine and check",
+   "start": 109.79,
+   "end": 122.02,
+   "jobs": [
+    "Refine3D/job020"
+   ],
+   "job_type": "relion.refine3d"
+  },
+  {
+   "key": "postprocess",
+   "label": "Measure the final detail",
+   "phase": "Refine and check",
+   "start": 122.39,
+   "end": 126.15,
+   "jobs": [
+    "PostProcess/job021"
+   ],
+   "job_type": "relion.postprocess"
+  },
+  {
+   "key": "apex_prepare",
+   "label": "Prepare a flexibility analysis",
+   "phase": "Refine and check",
+   "start": 126.22,
+   "end": 126.83,
+   "jobs": [
+    "ApexDecompose/job022"
+   ],
+   "job_type": "apex.decompose.prepare"
+  },
+  {
+   "key": "apex_train",
+   "label": "Run the flexibility analysis",
+   "phase": "Refine and check",
+   "start": 126.91,
+   "end": 141.39,
+   "jobs": [
+    "ApexDecompose/job023"
+   ],
+   "job_type": "apex.decompose.train"
+  }
+ ],
+ "judgements": [
+  {
+   "t": 12.12,
+   "phase": "Clean up the photos",
+   "what": "Checked every photo's sharpness and motion",
+   "job": "CtfFind/job003",
+   "reason": "24 of 24 micrographs passed. motion threshold: fixed at 80 A, not derived from the batch. ctf_resolution threshold: median 3.43 + 3 x 0.23 (1.4826 x MAD) = 4.12 A, raised to the 6 A floor. 0 low-figure-of-merit CTF fits kept because MotionCor2's own defocus fit agrees within 1000 A"
+  },
+  {
+   "t": 17.04,
+   "phase": "Find and sort the copies",
+   "what": "Looked at 8 photos to decide how picky the molecule finder should be",
+   "job": null,
+   "reason": "log_adjust_thr = -0.5, chosen by claude-opus-5-5 from a ladder of 4 thresholds on 8 of Select/job004/micrographs.star's 24 micrographs (313.2 picks per micrograph at that rung): I opened and looked at all 8 images. This beta-galactosidase grid is very densely packed:"
+  },
+  {
+   "t": 26.99,
+   "phase": "Find and sort the copies",
+   "what": "Chose which groups to keep",
+   "job": "Class2D/job007",
+   "reason": "kept 7 of 16 classes from Class2D/job007 (5469 particles, 74% of 7433): classes 1,2,5,6,8,14,16. Classes 1, 2, 5, 6 and 16 each show one compact density with defined internal lobes."
+  },
+  {
+   "t": 28.4,
+   "phase": "Find and sort the copies",
+   "what": "Chose which groups to keep",
+   "job": "Class2D/job008",
+   "reason": "kept 12 of 32 classes from Class2D/job008 (5132 particles, 69% of 7433): classes 1,3,4,6,13,14,19,21,22,24,28,30. I kept 1, 24 and 28 because each is a sharp, compact density with separate lobes and a central hole, a closed outline and clear solvent around it."
+  },
+  {
+   "t": 29.04,
+   "phase": "Find and sort the copies",
+   "what": "Compared the two sorting tries side by side",
+   "job": null,
+   "reason": "Reconciled 2 arms onto one view vocabulary of 6 views by looking at every arm's kept classes on one page: job007 reaches 5, job008 reaches 5. job007 is the only arm reaching 'Thin rod: a narrow straight bar with little internal structure'."
+  },
+  {
+   "t": 56.07,
+   "phase": "Build the 3D shape",
+   "what": "Chose how tightly to outline the molecule",
+   "job": null,
+   "reason": "inimask_threshold = 0.04632 (2.0 sd of Refine3D/job011/run_class001.mrc) for a generous mask, chosen by claude-opus-5-5 from 5 admissible candidate(s) of 5:"
+  },
+  {
+   "t": 65.83,
+   "phase": "Build the 3D shape",
+   "what": "Chose the best 3D group",
+   "job": "Class3D/job013",
+   "reason": "kept 1 of 3 classes from Class3D/job013 (4134 particles, 76% of 5469): classes 1. Class 1 is a compact, closed density with a sharp edge. The orange and red contours sit close together, and slices xy, xz and yz show lots of internal detail, including a central solvent channel."
+  },
+  {
+   "t": 87.46,
+   "phase": "Refine and check",
+   "what": "Chose how tightly to outline the molecule",
+   "job": null,
+   "reason": "inimask_threshold = 0.0024248 (1.79 sd of Reconstruct/job017/reconstruction.mrc at 10.2 A): the level whose body has the 715 nm^3 of mask_consensus's mask (MaskCreate/job012, 0.04632 = 2.09 sd of Refine3D/job011/run_class001.mrc at 10.2 A)."
+  }
+ ]
+}

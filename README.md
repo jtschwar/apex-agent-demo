@@ -68,9 +68,11 @@ python3 -m http.server 8765                                           # preview 
 
 - **CTF results** (`ctf_results.csv`): synthetic. There are 40 micrographs, shaped so that
   each rule in the Skill has something to catch.
-- **2D classes** (`class2d_gallery.png`, `class2d_classes.csv`): real. They come from a
-  RELION 5 Class2D run (K = 50, 813 particles) on ribosome minislabs from
-  [CryoET Data Portal](https://cryoetdataportal.czscience.com) dataset 10426.
+- **2D classes** (`class2d_gallery.png`, `class2d_classes.csv`): real. They come from
+  a fully automatic ApexAgent run on the RELION 3.0 tutorial dataset (β-galactosidase):
+  Class2D, 16 classes, 7,433 particles.
+- **The run timeline** (`apex_run.json`): the same run's jobs and decision log, exported
+  from ApexAgent's project database with file paths removed.
 
 ## Credits
 

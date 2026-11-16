@@ -72,6 +72,7 @@ h3 { font-size: 1.05em; margin: 0 0 0.3em; font-weight: 700; }
 @media (max-width: 900px) { .split, .split.even, .split.side { grid-template-columns: 1fr; } }
 .panel { background: var(--panel); border: 1px solid var(--rule); border-radius: 14px; padding: clamp(16px, 1.6vw, 28px); }
 .panel + .panel { margin-top: 14px; }
+.split > .panel + .panel { margin-top: 0; }   /* side by side: the grid gap spaces them */
 .kind { font-weight: 700; font-size: 0.9em; margin: 0 0 0.45em; }
 .kind.do { color: var(--data); }
 .kind.stuck { color: var(--ink-2); }
@@ -142,9 +143,31 @@ svg text { font: 13px var(--sans); fill: var(--muted); font-variant-numeric: tab
 .flags { margin: 0; padding: 0; list-style: none; font-size: 0.88em; }
 .flags li { margin: 0 0 0.6em; }
 
+.explain { --img: clamp(96px, 17vh, 190px); display: grid; grid-template-columns: repeat(3, var(--img)) minmax(0, 1fr);
+  gap: clamp(16px, 2.4vw, 44px); align-items: start; margin: 0.4em 0 1.4em; }
+.explain figure { margin: 0; }
+.explain img, .explain canvas { width: var(--img); height: var(--img); object-fit: cover; display: block; }
+.explain img { border-radius: 10px; }
+.explain canvas { border-radius: 50%; }
+.explain figcaption { font-size: 0.78em; color: var(--ink-2); margin-top: 0.55em; line-height: 1.35; }
+.explain figcaption b { color: var(--ink); }
+.explain-note { margin: 0; align-self: center; color: var(--ink-2); max-width: 26em; padding-left: clamp(16px, 2vw, 32px); border-left: 1px solid var(--rule); }
+@media (max-width: 900px) { .explain { grid-template-columns: repeat(3, var(--img)); } .explain-note { grid-column: 1 / -1; border: 0; padding: 0; } }
+#ctfTip { display: flex; gap: 10px; align-items: center; white-space: normal; }
+#tipRings { width: 72px; height: 72px; border-radius: 50%; flex: none; }
+#tipText { min-width: 9.5em; }
+
+.avgstrip { display: flex; align-items: flex-start; gap: clamp(10px, 1.4vw, 24px); margin: 0.2em 0 1.1em; }
+.avgstrip figure { margin: 0; }
+.avgstrip img { width: 11vh; height: 11vh; display: block; border-radius: 8px; }
+.avgstrip .row5 { display: flex; gap: 6px; }
+.avgstrip figcaption { font-size: 0.74em; color: var(--ink-2); margin-top: 0.4em; max-width: 24ch; }
+.avgstrip .row5 + figcaption { max-width: none; }
+.avgstrip .arrow { font-size: 1.6em; color: var(--muted); align-self: center; margin-top: -1em; }
+
 /* ---------------------------------------------------------------- gallery */
-.gallery { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: clamp(4px, 0.5vw, 10px);
-  width: min(100%, calc((100dvh - 250px) * 1.75)); }
+.gallery { display: grid; grid-template-columns: repeat(var(--cols, 10), minmax(0, 1fr)); gap: clamp(4px, 0.5vw, 10px);
+  width: min(100%, calc((100dvh - 250px) * var(--aspect, 1.75))); }
 .gallery.hide-empty { grid-template-columns: repeat(7, minmax(0, 1fr)); width: min(100%, calc((100dvh - 250px) * 1.55)); }
 .cls { padding: 0; border-radius: 10px; overflow: hidden; display: block; position: relative; background: var(--panel); border: 3px solid transparent; }
 .cls img { display: block; width: 100%; aspect-ratio: 1; }
@@ -172,15 +195,13 @@ svg text { font: 13px var(--sans); fill: var(--muted); font-variant-numeric: tab
 .builder textarea { min-height: 5.6em; resize: vertical; }
 #skillPreview { margin: 0; max-height: calc(100dvh - 280px); overflow: auto; background: var(--sunk); border-radius: 12px; padding: 1em 1.2em; font: 0.76em/1.55 var(--mono); white-space: pre-wrap; }
 
-/* ---------------------------------------------------------------- scale */
-.layers { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 1.4em; }
-@media (max-width: 900px) { .layers { grid-template-columns: 1fr 1fr; } }
-.layers > div { padding: 1.2em 1.4em 1.4em 0; border-top: 1px solid var(--rule); }
-.layers > div + div { padding-left: 1.4em; border-left: 1px solid var(--rule); }
-.layers .now { border-top: 4px solid var(--data); }
-.layers .tag { font-size: 0.8em; font-weight: 700; color: var(--data); min-height: 1.4em; }
-.layers h3 { font-size: 1.4em; margin: 0.15em 0 0.35em; }
-.layers p { margin: 0; color: var(--ink-2); }
+/* ---------------------------------------------------------------- scale: the run timeline */
+.tiles .panel + .panel { margin-top: 0; }
+.tip.wide { white-space: normal; width: min(440px, 80vw); line-height: 1.45; }
+.tip .log { display: block; margin-top: 0.4em; font: 12px/1.5 var(--mono); opacity: 0.85; }
+.dia { color: var(--ink); margin-right: 0.35em; }
+#runChart { max-height: 34vh; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .bigurl { font-size: clamp(20px, 2.1vw, 40px); font-weight: 700; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 </style>
 </head>
@@ -198,7 +219,7 @@ svg text { font: 13px var(--sans); fill: var(--muted); font-variant-numeric: tab
     </div>
     <figure style="margin:0">
       <canvas class="thon" id="thon" width="900" height="900" role="img" aria-label="A simulated CTF power spectrum: concentric Thon rings, slightly elliptical"></canvas>
-      <figcaption class="thon-cap">Thon rings, the fingerprint every cryo-EM image carries. Step 1 is about reading them.</figcaption>
+      <figcaption class="thon-cap">Every microscope photo carries a ring pattern like this. How far out the rings reach tells you how sharp the photo is.</figcaption>
     </figure>
   </div>
 </section>
@@ -272,25 +293,32 @@ svg text { font: 13px var(--sans); fill: var(--muted); font-variant-numeric: tab
 <section class="slide" aria-label="Step 1: numbers">
   <div class="body">
   <div class="where"><span class="n">1</span>Numbers</div>
-  <h2>Which micrographs do we keep?</h2>
-  <p class="sub">The microscope took 40 images (micrographs). CTF estimation scores how much fine detail each one holds, in Å: lower is better. The Skill holds the lab's rule for where to draw the line.</p>
-  <div class="split even">
+  <h2>Which photos are sharp enough to use?</h2>
+  <p class="sub">The microscope took 40 photos of the sample, called <span class="term">micrographs</span>. Software gives each a <b>sharpness score</b>: the finest detail it holds, in ångströms (Å). Smaller is sharper. The Skill holds the lab's rule for where to draw the line.</p>
+  <div class="explain">
+    <figure><img src="assets/micrographs/20170629_00022_frameImage.jpg" alt="A real cryo-EM micrograph: grey speckle of densely packed molecules and a few black dots"><figcaption><b>A real photo</b><br>Each grey speck is one copy of the molecule</figcaption></figure>
+    <figure><canvas id="ringSharp" width="560" height="560" role="img" aria-label="Ring pattern of a sharp photo"></canvas><figcaption id="capSharp"></figcaption></figure>
+    <figure><canvas id="ringBlur" width="560" height="560" role="img" aria-label="Ring pattern of a blurry photo"></canvas><figcaption id="capBlur"></figcaption></figure>
+    <p class="explain-note">The software reads sharpness from each photo's <b>ring pattern</b>. The farther out the rings reach, the finer the detail the photo holds.</p>
+  </div>
+  <div class="split even" style="align-items:stretch">
     <div class="panel">
       <p class="kind do">Do this</p>
       Attach <code>ctf_results.csv</code> and send:
-      <div class="prompt">These are CTF estimation results for 40 micrographs. Which micrographs should we keep?</div>
+      <div class="prompt">These are sharpness scores (CTF estimation results) for 40 micrographs. Which ones should we keep?</div>
       Check the proposal on the next slide, then reply:
       <div class="prompt" style="margin-bottom:0">Approve.</div>
     </div>
     <div class="panel">
       <p class="kind">You should see</p>
+      <p style="margin:0 0 0.6em;color:var(--ink-2)">A plain-language summary first, then:</p>
       <div class="expect">PROPOSAL: select micrographs
 Cutoff: 7.6 Å  (rule: relaxed to p90)
 Keep: 36/40
 Reject (4): mic_012, mic_016, mic_018, mic_038
 Needs your review: mic_007, mic_029
 Approve, edit, or reject?</div>
-      <p style="margin:0.8em 0 0;color:var(--ink-2)">After you approve: a one-line <code>DECISION | …</code> log entry.</p>
+      <p style="margin:0.8em 0 0;color:var(--ink-2)">After you approve: a one-line <code>DECISION | …</code> log entry, the record of what was decided and why.</p>
     </div>
   </div>
   </div>
@@ -304,19 +332,20 @@ Approve, edit, or reject?</div>
     <div>
       <div class="tiles">
         <div class="panel tile hot"><div class="v" id="tCut">7.6 Å</div><div class="k">your cutoff</div></div>
-        <div class="panel tile"><div class="v" id="tKeep">36 / 40</div><div class="k">micrographs kept</div></div>
-        <div class="panel tile"><div class="v" id="tP90">–</div><div class="k">90th percentile</div></div>
+        <div class="panel tile"><div class="v" id="tKeep">36 / 40</div><div class="k">photos kept</div></div>
+        <div class="panel tile"><div class="v" id="tP90">–</div><div class="k">the sharpest 90% reach</div></div>
         <div class="panel tile"><div class="v" id="tRule">–</div><div class="k">the Skill's cutoff</div></div>
       </div>
       <div class="panel chart">
         <div class="legend" aria-hidden="true">
           <span><span class="sw" style="background:var(--data)"></span>Kept</span>
           <span><span class="sw" style="background:var(--rejected)"></span>Rejected</span>
-          <span><span class="sw" style="background:var(--review);border-radius:50%"></span>Fitted into noise?</span>
-          <span>◆ Strong astigmatism</span>
+          <span><span class="sw" style="background:var(--review);border-radius:50%"></span>Score may be wrong</span>
+          <span>◆ Microscope needs adjusting</span>
+          <span>Hover a bar to see that photo's rings</span>
         </div>
-        <svg id="ctfChart" viewBox="0 0 1400 400" role="img" aria-label="CTF fit limit per micrograph, sorted, with the cutoff line"></svg>
-        <div class="tip" id="ctfTip"></div>
+        <svg id="ctfChart" viewBox="0 0 1400 400" role="img" aria-label="Sharpness score per photo, sorted from sharpest to blurriest, with the cutoff line"></svg>
+        <div class="tip" id="ctfTip"><canvas id="tipRings" width="288" height="288" aria-hidden="true"></canvas><span id="tipText"></span></div>
         <div class="controls">
           <label for="cut">Cutoff <b id="cutVal">7.6</b> Å</label>
           <input id="cut" type="range" min="3.5" max="20" step="0.1" value="7.6">
@@ -328,7 +357,7 @@ Approve, edit, or reject?</div>
     </div>
     <div class="panel">
       <h3>What the rule says</h3>
-      <p style="margin:0 0 1.2em;color:var(--ink-2);font-size:0.9em">Start at 6 Å. If the data is worse than that, relax to the 90th percentile (never past 10 Å) so the run doesn't lose most of its data. Never tighten on its own.</p>
+      <p style="margin:0 0 1.2em;color:var(--ink-2);font-size:0.9em">Keep photos at 6 Å or sharper. If that loses most of them, move the line out to keep the sharpest 90%, never past 10 Å. Making it stricter is your call, not the agent's.</p>
       <h3>What it hands back to you</h3>
       <ul class="flags" id="ctfFlags"></ul>
       <p class="pause"><b>Pause here.</b> Hands up when Claude has written its <code>DECISION</code> line.</p>
@@ -340,27 +369,32 @@ Approve, edit, or reject?</div>
 <section class="slide" aria-label="Step 2: images">
   <div class="body">
   <div class="where"><span class="n">2</span>Images</div>
-  <h2>Which 2D classes do we keep?</h2>
-  <p class="sub">Thousands of particle images are grouped into 50 class averages. No number says which are real ribosomes and which are membrane, ice, or noise. It's a <b>visual judgement</b>. In ApexAgent a vision model makes it, and plain code checks the answer.</p>
+  <h2>Which groups show the real molecule?</h2>
+  <p class="sub">Each photo holds hundreds of copies of one molecule, here an enzyme called β-galactosidase. One copy is too faint to see, so the software sorts look-alike copies into groups and averages each group. These averages are called <span class="term">2D classes</span>.</p>
+  <div class="avgstrip" aria-label="Five single copies look like noise; the average of their group shows the molecule; a junk group shows a smear">
+    <figure><div class="row5"><img src="assets/particles/class_01_p1.png" alt=""><img src="assets/particles/class_01_p2.png" alt=""><img src="assets/particles/class_01_p3.png" alt=""><img src="assets/particles/class_01_p4.png" alt=""><img src="assets/particles/class_01_p5.png" alt=""></div><figcaption>Five single copies from group 1, turned to line up. Mostly noise.</figcaption></figure>
+    <span class="arrow" aria-hidden="true">→</span>
+    <figure><img src="assets/classes/class_01.png" alt=""><figcaption>Average of all 680 copies in group 1: the molecule.</figcaption></figure>
+    <figure><img src="assets/classes/class_09.png" alt=""><figcaption>Group 9: a junk smear.</figcaption></figure>
+  </div>
+  <p class="sub">No number tells good groups from junk. It's a <b>visual judgement</b>: in ApexAgent a vision model makes it, and plain code checks the answer.</p>
   <div class="split even">
     <div class="panel">
       <p class="kind do">Do this</p>
       In the <b>same chat</b>, attach <code>class2d_gallery.png</code> and <code>class2d_classes.csv</code>, then send:
-      <div class="prompt">These are 2D class averages of ribosomes from cryo-electron tomograms. Which classes should we keep?</div>
+      <div class="prompt">These are 2D class averages of beta-galactosidase, an enzyme. Which classes should we keep?</div>
       While it works, go to the next slide and <b>pick the classes you would keep</b>.
+      <p style="margin:0.8em 0 0;color:var(--ink-2);font-size:0.88em"><b>If stuck:</b> no proposal format means the Skill isn't loaded. Check its toggle, or paste the Skill text (Set up slide).</p>
     </div>
     <div>
       <div class="panel">
         <p class="kind">You should see</p>
         <div class="expect">PROPOSAL: select 2D classes
-Keep (n classes, p% of particles): …
-Reject: 15: membrane/edge, 9: blob/ice, …
-Unsure: …
+Keep (8 classes, 80% of particles): 1,2,5,6,8,14,15,16
+Reject: 4: off-centre/partial, 9: blob/ice, …
+Unsure: 3, 7, 13 …
 Approve, edit, or reject?</div>
-      </div>
-      <div class="panel">
-        <p class="kind stuck">If stuck</p>
-        <p style="margin:0">No proposal format? The Skill isn't loaded. Check its toggle, or paste the Skill text (Set up slide).</p>
+        <p style="margin:0.6em 0 0;color:var(--ink-2);font-size:0.88em">Your list may differ by a class or two. That's expected for a judgement call.</p>
       </div>
     </div>
   </div>
@@ -370,15 +404,17 @@ Approve, edit, or reject?</div>
 <!-- ============================================================ 7 step 2 gallery -->
 <section class="slide" aria-label="Step 2: pick and compare">
   <div class="where"><span class="n">2</span>Images</div>
-  <h2>Your eye against Claude's</h2>
+  <h2>Your eye, Claude's, and ApexAgent's</h2>
   <div class="split side">
     <div>
       <div class="row" style="margin-bottom:10px">
-        <label><input type="checkbox" id="hideEmpty"> Hide the <span id="nEmpty"></span> empty classes</label>
+        <label id="hideEmptyRow"><input type="checkbox" id="hideEmpty"> Hide the <span id="nEmpty"></span> empty classes</label>
         <button id="clearPicks">Clear my picks</button>
-        <button id="showKey">Show the expert's pick</button>
+        <button id="showKey">Show ApexAgent's pick</button>
       </div>
+      <p style="margin:0 0 10px;color:var(--ink-2);font-size:0.88em">Click the groups you would keep. The percentage is each group's share of all the copies.</p>
       <div class="gallery" id="gallery"></div>
+      <p style="margin:10px 0 0;color:var(--muted);font-size:0.78em">From a real ApexAgent run on the RELION 3.0 tutorial dataset (β-galactosidase): 7,433 copies in 16 groups.</p>
     </div>
     <div class="panel">
       <h3>Your picks</h3>
@@ -393,7 +429,7 @@ Approve, edit, or reject?</div>
         <button id="checkList" class="btn primary">Check</button>
       </div>
       <div class="verdict" id="verdict" aria-live="polite"></div>
-      <p class="pause"><b>Pause here.</b> Where did you and Claude disagree?</p>
+      <p class="pause"><b>Pause here.</b> Where did you, Claude, and ApexAgent disagree?</p>
     </div>
   </div>
 </section>
@@ -406,14 +442,14 @@ Approve, edit, or reject?</div>
   <div class="split even" style="margin-top:0.6em">
     <div class="panel">
       <p class="kind do">Do this</p>
-      <div class="prompt">Edit the micrograph selection: tighten the cutoff to 5 Å.</div>
+      <div class="prompt">Edit the photo selection: tighten the cutoff to 5 Å.</div>
       Then confirm, with a reason:
       <div class="prompt" style="margin-bottom:0">Confirmed. This is a quick test, so we only want the best data.</div>
     </div>
     <div class="panel">
       <p class="kind">You should see</p>
-      <p style="margin:0">Claude doesn't refuse, and it doesn't quietly comply. It names the rule (never tighten below the 6 Å floor) and puts the cost in numbers: <b>36 → 22 micrographs</b>. Once you confirm, it applies the change and logs it as a <b>human override</b>, with your reason.</p>
-      <p style="margin:1em 0 0;color:var(--ink-2)">Try the classes too: “Edit: also keep class 40.” It should show only what changed.</p>
+      <p style="margin:0">Claude doesn't refuse, and it doesn't quietly comply. It names the rule (don't go stricter than 6 Å without asking) and puts the cost in numbers: <b>36 → 22 photos</b>. Once you confirm, it applies the change and logs it as a <b>human override</b>: your call, with your reason.</p>
+      <p style="margin:1em 0 0;color:var(--ink-2)">Try the classes too: “Edit: also keep class 7.” It should show only what changed.</p>
     </div>
   </div>
   <p class="pause" style="font-size:1.15em"><b>That's the whole pattern.</b> The agent did the work and showed its evidence. You kept the authority. Every decision left a record.</p>
@@ -455,13 +491,24 @@ including any invoice flagged as missing data</textarea>
 <section class="slide" aria-label="How it scales">
   <div class="body">
     <h2>From one Skill to ApexAgent</h2>
-    <p class="sub" style="font-size:1.1em">You used one layer today. ApexAgent wraps three more around the same propose-and-approve loop and runs full RELION 5 processing on our cluster.</p>
-    <div class="layers">
-      <div class="now"><div class="tag">You built this today</div><h3>Skills</h3><p>Job knowledge: for each processing step, how parameters are derived, what to check, and when to decline. Today's Skill condenses two of them.</p></div>
-      <div><div class="tag"></div><h3>Tools</h3><p>MCP servers let the agent read results straight from the pipeline and submit jobs, instead of reading a file you uploaded.</p></div>
-      <div><div class="tag"></div><h3>Harness</h3><p>A loop that proposes, waits for jobs to finish, reads the results, and proposes again. Autonomy levels set which steps need a person.</p></div>
-      <div><div class="tag"></div><h3>Dashboard</h3><p>Every proposal, its evidence, and its decision log in one place, so one scientist can supervise many runs.</p></div>
+    <p class="sub" style="font-size:1.05em">Today you ran one slice of it: the review rules, packed into a Skill. This is the whole agent processing the photos behind today's groups. A person set it up (3 decisions), then it ran on its own.</p>
+    <div class="tiles">
+      <div class="panel tile hot"><div class="v" id="rDur"></div><div class="k">from 24 microscope movies to a 3D structure</div></div>
+      <div class="panel tile"><div class="v" id="rJobs"></div><div class="k">jobs it planned, ran on the cluster, and checked</div></div>
+      <div class="panel tile"><div class="v" id="rCalls"></div><div class="k">judgement calls, each with its reasoning logged</div></div>
+      <div class="panel tile"><div class="v" id="rRes"></div><div class="k">finest detail in the final 3D map</div></div>
     </div>
+    <div class="legend" aria-hidden="true">
+      <span><i class="sw" style="background:var(--data)"></i>A job running on the computing cluster</span>
+      <span><span class="dia">◆</span>A judgement call the agent made and logged</span>
+      <span>Gaps: the agent reading results and deciding what to run next</span>
+    </div>
+    <div class="chart" id="runHost">
+      <svg id="runChart" viewBox="0 0 1400 300" role="img" aria-label="Timeline of the ApexAgent run: four phases of jobs over 2 hours 21 minutes, with judgement calls marked"></svg>
+      <div class="tip wide" id="runTip"></div>
+    </div>
+    <p class="sub" style="margin:1em 0 0">What turns a Skill into an agent: <b>hands</b> (tools that submit jobs and read every result), <b>a loop</b> (propose, run, check, repeat), <b>gates</b> (an autonomy level; this run was set to autonomous), and <b>a record</b> (every decision, in a dashboard).</p>
+    <ol class="sr" id="runList"></ol>
   </div>
 </section>
 
@@ -550,7 +597,7 @@ const PARTS = {
     "Every proposal, the evidence behind it, and the decision, in one dashboard.",
   ],
   today: [
-    "Two review steps from that pipeline: which micrographs (microscope images) to keep, then which 2D classes.",
+    "Two review steps from that pipeline: which photos are sharp enough, then which groups of copies show the molecule.",
     "One Skill, a saved set of instructions Claude loads when a task needs it, condensed from two of those files.",
     "Code execution on the files you attach, so every number is computed, not guessed.",
     "Claude proposes and you approve, edit, or reject. It pushes back before it breaks a rule.",
@@ -572,31 +619,52 @@ $$(".exswitch button").forEach(b => (b.onclick = () => showParts(b.dataset.ex)))
 showParts("apex");
 
 /* ------------------------------------------------------------ title: a real CTF */
-(function drawThon() {
-  const c = $("#thon"), g = c.getContext("2d"), n = c.width, img = g.createImageData(n, n);
+// A computed CTF power spectrum (Thon rings). The title uses fixed values; Step 1 draws one
+// per table row from its own numbers: defocus and astigmatism set the rings, the fit limit
+// sets how far out they reach (envelope ~15% at 1/fit), and a low figure of merit drowns them.
+function drawRings(c, { dfU = 14000, dfV = 12600, ang = 0.6, B = 38, ring = 1, noiseAmp = 0.22, seed = 7, kmax = 1 / 3.2 } = {}) {
+  const g = c.getContext("2d"), n = c.width, img = g.createImageData(n, n);
   const dark = matchMedia("(prefers-color-scheme: dark)").matches;
-  const lambda = 0.0197, cs = 2.7e7, dfU = 14000, dfV = 12600, angAst = 0.6, amp = 0.07;   // 300 kV, units of Å
-  const kmax = 1 / 3.2;                                                                    // disc edge = 3.2 Å
+  const lambda = 0.0197, cs = 2.7e7, amp = 0.07;                                         // 300 kV, units of Å
   const base = dark ? [15, 23, 29] : [244, 246, 247], ink = dark ? [214, 230, 242] : [20, 33, 43];
-  let seed = 7; const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
     const x = (i - n / 2) / (n / 2), y = (j - n / 2) / (n / 2), r = Math.hypot(x, y), p = (j * n + i) * 4;
     if (r > 1) { img.data[p + 3] = 0; continue; }
     const k = r * kmax, a = Math.atan2(y, x);
-    const df = 0.5 * (dfU + dfV + (dfU - dfV) * Math.cos(2 * (a - angAst)));
+    const df = 0.5 * (dfU + dfV + (dfU - dfV) * Math.cos(2 * (a - ang)));
     const chi = Math.PI * lambda * df * k * k - 0.5 * Math.PI * cs * lambda ** 3 * k ** 4;
     const ctf = -Math.sqrt(1 - amp * amp) * Math.sin(chi) - amp * Math.cos(chi);
-    const env = Math.exp(-38 * k * k), noise = (rand() - 0.5) * 0.22 * (0.3 + r);
-    const v = Math.max(0, Math.min(1, (ctf * ctf * env + noise * (1 - env * 0.5) + 0.08 * (1 - r)) * 1.15));
+    const env = Math.exp(-B * k * k), noise = (rand() - 0.5) * noiseAmp * (0.3 + r);
+    const v = Math.max(0, Math.min(1, (ring * ctf * ctf * env + noise * (1 - env * 0.5) + 0.08 * (1 - r)) * 1.15));
     for (let ch = 0; ch < 3; ch++) img.data[p + ch] = base[ch] + (ink[ch] - base[ch]) * v;
     img.data[p + 3] = 255;
   }
   g.putImageData(img, 0, 0);
-})();
+}
+// Small thumbnails show only the inner rings (edge = 5.5 Å) and are drawn at their on-screen
+// pixel size: the full pattern's fine outer rings alias into moiré when the browser shrinks them.
+function fitCanvas(c) {
+  const px = Math.round((c.clientWidth || c.width) * (window.devicePixelRatio || 1));
+  if (px && c.width !== px) { c.width = px; c.height = px; }
+  return c;
+}
+const ringsFor = r => ({                                     // one table row -> its ring pattern
+  kmax: 1 / 5.5,
+  dfU: r.defocus_u_A, dfV: r.defocus_v_A, B: 1.9 * r.ctf_max_resolution_A ** 2,
+  ring: r.ctf_figure_of_merit < 0.05 ? 0.3 : 1, noiseAmp: r.ctf_figure_of_merit < 0.05 ? 0.5 : 0.22,
+  seed: 11 + parseInt(r.micrograph.slice(4), 10),
+});
+drawRings($("#thon"));
 
 /* ------------------------------------------------------------ step 1: CTF chart */
 const CTF = window.CTF.slice().sort((a, b) => a.ctf_max_resolution_A - b.ctf_max_resolution_A);
 const fits = CTF.map(r => r.ctf_max_resolution_A);
+{ const sharp = CTF[0], blurry = CTF[CTF.length - 1];                  // CTF is sorted sharpest first
+  const drawPair = () => { drawRings(fitCanvas($("#ringSharp")), ringsFor(sharp)); drawRings(fitCanvas($("#ringBlur")), ringsFor(blurry)); };
+  drawPair(); addEventListener("resize", () => { clearTimeout(drawPair.t); drawPair.t = setTimeout(drawPair, 200); });
+  $("#capSharp").innerHTML = `<b>Sharp: ${sharp.ctf_max_resolution_A.toFixed(1)} Å</b><br>${sharp.micrograph}, rings reach far out`;
+  $("#capBlur").innerHTML = `<b>Blurry: ${blurry.ctf_max_resolution_A.toFixed(1)} Å</b><br>${blurry.micrograph}, rings fade early`; }
 function percentile(sorted, q) {            // numpy default: linear interpolation
   const pos = (sorted.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos);
   return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
@@ -616,7 +684,7 @@ for (let v = 0; v <= 20; v += 5) {
   el("line", { x1: M.l, x2: W - M.r, y1: y(v), y2: y(v), stroke: v ? "var(--rule)" : "var(--axis)", "stroke-width": 1 });
   el("text", { x: M.l - 10, y: y(v) + 4, "text-anchor": "end" }).textContent = v + " Å";
 }
-el("text", { x: M.l, y: H - 6 }).textContent = "40 micrographs, sorted from best fit to worst";
+el("text", { x: M.l, y: H - 6 }).textContent = "40 photos, sorted from sharpest to blurriest";
 function barPath(x, w, top, base) {        // 4px rounded data-end, square at the baseline
   const r = Math.min(4, w / 2, base - top);
   return `M${x},${base}V${top + r}Q${x},${top} ${x + r},${top}H${x + w - r}Q${x + w},${top} ${x + w},${top + r}V${base}Z`;
@@ -639,9 +707,12 @@ const cutLabel = el("text", { x: M.l + 8, "text-anchor": "start", style: "fill:v
 const tip = $("#ctfTip");
 function showTip(r, sx, sy) {
   const box = svg.getBoundingClientRect(), host = svg.parentElement.getBoundingClientRect(), k = box.width / W;
-  tip.innerHTML = `<b>${r.micrograph}</b>: fit ${r.ctf_max_resolution_A.toFixed(1)} Å, FOM ${r.ctf_figure_of_merit}, astigmatism ${r.astigmatism_A} Å`;
-  tip.style.left = Math.min(Math.max(box.left - host.left + sx * k - 150, 0), host.width - 380) + "px";
-  tip.style.top = (box.top - host.top + sy * k - 46) + "px"; tip.style.opacity = 1;
+  drawRings(fitCanvas($("#tipRings")), ringsFor(r));
+  $("#tipText").innerHTML = `<b>${r.micrograph}</b><br>sharpness ${r.ctf_max_resolution_A.toFixed(1)} Å<br>confidence ${r.ctf_figure_of_merit}` +
+    (r.ctf_figure_of_merit < 0.05 ? "<br>low: the rings may be noise" : "") + (r.astigmatism_A > 1000 ? "<br>stretched rings: lens out of round" : "");
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.min(Math.max(box.left - host.left + sx * k - w / 2, 0), host.width - w) + "px";
+  tip.style.top = Math.max(box.top - host.top + sy * k - h - 12, 0) + "px"; tip.style.opacity = 1;
 }
 function hideTip() { tip.style.opacity = 0; }
 function setCut(c) {
@@ -658,17 +729,23 @@ $("#cut").addEventListener("input", e => setCut(+e.target.value));
 $$("[data-cut]").forEach(b => (b.onclick = () => setCut(b.dataset.cut === "rule" ? RULE : +b.dataset.cut)));
 setCut(RULE);
 const flags = [];
-CTF.filter(r => r.ctf_figure_of_merit < 0.05).forEach(r => flags.push(`<span class="sw" style="background:var(--review);border-radius:50%"></span><b>${r.micrograph}</b>: the fit looks good (${r.ctf_max_resolution_A.toFixed(1)} Å), but the figure of merit is ${r.ctf_figure_of_merit}. Probably fitted into noise, so it comes to you.`));
-CTF.filter(r => r.astigmatism_A > 1000).forEach(r => flags.push(`◆ <b>${r.micrograph}</b>: astigmatism ${r.astigmatism_A} Å. Reported, not filtered: it points at the microscope's alignment.`));
+CTF.filter(r => r.ctf_figure_of_merit < 0.05).forEach(r => flags.push(`<span class="sw" style="background:var(--review);border-radius:50%"></span><b>${r.micrograph}</b>: sharp score (${r.ctf_max_resolution_A.toFixed(1)} Å) but low confidence (${r.ctf_figure_of_merit}). The rings may be noise, so you decide.`));
+CTF.filter(r => r.astigmatism_A > 1000).forEach(r => flags.push(`◆ <b>${r.micrograph}</b>: stretched rings (astigmatism ${r.astigmatism_A} Å). The lens needs adjusting, not the photo, so it stays in.`));
 $("#ctfFlags").innerHTML = flags.map(f => `<li>${f}</li>`).join("");
 
 /* ------------------------------------------------------------ step 2: gallery */
-// Reference selection by the presenters; shown only when "Show the expert's pick" is pressed.
-const EXPERT_KEEP = [12, 22, 26, 33, 37, 43, 48, 49];
+// ApexAgent's own selection for Class2D/job007 in the run this gallery comes from
+// (~/run001, ApexAgent/apex.db, table classselection), made by its vision model.
+const APEX_KEEP = [1, 2, 5, 6, 8, 14, 16];
 const CLASSES = window.CLASSES, N = CLASSES.length;
 const mine = new Set();
 const gallery = $("#gallery");
-$("#nEmpty").textContent = CLASSES.filter(c => c.empty === "yes").length;
+const nEmpty = CLASSES.filter(c => c.empty === "yes").length;
+$("#nEmpty").textContent = nEmpty;
+if (!nEmpty) $("#hideEmptyRow").hidden = true;
+{ const cols = N <= 24 ? 8 : 10, rows = Math.ceil(N / cols);           // size the grid to its row count
+  $("#gallery").style.setProperty("--cols", cols);
+  $("#gallery").style.setProperty("--aspect", (0.87 * cols / rows).toFixed(2)); }
 CLASSES.forEach(c => {
   const b = document.createElement("button");
   b.className = "cls" + (c.empty === "yes" ? " empty" : ""); b.dataset.k = c.class;
@@ -687,9 +764,9 @@ function refreshMine() {
 $("#hideEmpty").onchange = e => gallery.classList.toggle("hide-empty", e.target.checked);
 $("#clearPicks").onclick = () => { mine.clear(); refreshMine(); };
 $("#showKey").onclick = () => {
-  const head = `Expert's pick: <b>${EXPERT_KEEP.join(", ")}</b> (${(100 * share(EXPERT_KEEP)).toFixed(0)}% of particles)`;
-  if (mine.size) $("#verdict").innerHTML = head + "<br>" + compare([...EXPERT_KEEP], "the expert", "you", [...mine]);
-  else { EXPERT_KEEP.forEach(k => mine.add(k)); refreshMine(); $("#verdict").innerHTML = head + "."; }
+  const head = `ApexAgent kept <b>${APEX_KEEP.join(", ")}</b> (${(100 * share(APEX_KEEP)).toFixed(0)}% of particles). It took a second look at 7, 8, 14 and 15, called 8 its least certain keep, and dropped 15 as a blurred mix of views`;
+  if (mine.size) $("#verdict").innerHTML = head + ".<br>" + compare([...APEX_KEEP], "ApexAgent", "you", [...mine]);
+  else { APEX_KEEP.forEach(k => mine.add(k)); refreshMine(); $("#verdict").innerHTML = head + "."; }
 };
 // The same check ApexAgent runs on a model's answer (apex_agent/jobs/select_classes.py:
 // validate_selection): class numbers are 1-indexed, in range, and listed once.
@@ -723,6 +800,59 @@ $("#checkList").onclick = () => {
   $("#verdict").innerHTML = html;
 };
 $("#claudeList").addEventListener("keydown", e => { if (e.key === "Enter") $("#checkList").click(); });
+
+/* ------------------------------------------------------------ scale: a real ApexAgent run */
+(function runTimeline() {
+  const R = window.RUN, svgR = $("#runChart"), tipR = $("#runTip");
+  const hm = m => `${Math.floor(m / 60)} h ${String(Math.round(m % 60)).padStart(2, "0")} min`;
+  $("#rDur").textContent = hm(R.duration_min);
+  $("#rJobs").textContent = R.n_jobs;
+  $("#rCalls").textContent = R.judgements.length;
+  $("#rRes").textContent = R.final_resolution_A + " Å";
+  const W = 1400, L = 250, Rm = 16, top = 22, lane = 58, H = top + lane * R.phases.length + 34;
+  svgR.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const x = m => L + (m / R.duration_min) * (W - L - Rm);
+  const mk = (tag, attrs, parent = svgR) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent.appendChild(e); return e; };
+  for (let m = 0; m <= R.duration_min; m += 30) {
+    mk("line", { x1: x(m), x2: x(m), y1: top - 8, y2: H - 30, stroke: m ? "var(--rule)" : "var(--axis)", "stroke-width": 1 });
+    mk("text", { x: x(m), y: H - 10, "text-anchor": m ? "middle" : "start" }).textContent = m ? `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}` : "start";
+  }
+  mk("text", { x: x(R.duration_min), y: H - 10, "text-anchor": "end", style: "fill:var(--ink);font-weight:700" }).textContent = "done at " + hm(R.duration_min);
+  const laneY = ph => top + R.phases.indexOf(ph) * lane;
+  R.phases.forEach(ph => mk("text", { x: 0, y: laneY(ph) + lane / 2 + 5, style: "fill:var(--ink-2);font-size:15px" }).textContent = ph);
+  function show(html, sx, sy) {
+    const box = svgR.getBoundingClientRect(), host = $("#runHost").getBoundingClientRect(), k = box.width / W;
+    tipR.innerHTML = html;
+    const w = tipR.offsetWidth, h = tipR.offsetHeight;
+    tipR.style.left = Math.min(Math.max(box.left - host.left + sx * k - w / 2, 0), host.width - w) + "px";
+    tipR.style.top = Math.max(box.top - host.top + sy * k - h - 12, -h) + "px"; tipR.style.opacity = 1;
+  }
+  const hide = () => (tipR.style.opacity = 0);
+  const hook = (g, html, sx, sy) => {
+    g.addEventListener("pointerenter", () => show(html, sx, sy)); g.addEventListener("focus", () => show(html, sx, sy));
+    g.addEventListener("pointerleave", hide); g.addEventListener("blur", hide);
+  };
+  const esc = t => t.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+  R.steps.forEach(st => {
+    const x0 = x(st.start), w = Math.max(x(st.end) - x0 - 2, 3), cy = laneY(st.phase) + lane / 2 + 6;
+    const mins = st.end - st.start, label = `${st.label}: ${mins < 1 ? "under a minute" : Math.round(mins) + " min"}`;
+    const g = mk("g", { tabindex: 0, role: "img", "aria-label": label });
+    mk("rect", { x: x0 - 3, y: cy - 16, width: w + 6, height: 32, fill: "transparent" }, g);   // hit target larger than the mark
+    mk("rect", { x: x0, y: cy - 10, width: w, height: 20, rx: Math.min(4, w / 2), fill: "var(--data)" }, g);
+    hook(g, `<b>${esc(st.label)}</b><br>${mins < 1 ? "Under a minute" : Math.round(mins) + " min"} · <code>${esc(st.job_type || st.key)}</code>`, x0 + w / 2, cy - 10);
+  });
+  const lastX = {};                                   // calls logged seconds apart: keep the diamonds apart
+  R.judgements.forEach(j => {
+    const cx = Math.max(x(j.t), (lastX[j.phase] ?? -99) + 17), cy = laneY(j.phase) + 12;
+    lastX[j.phase] = cx;
+    const g = mk("g", { tabindex: 0, role: "img", "aria-label": `Judgement call: ${j.what}` });
+    mk("circle", { cx, cy, r: 13, fill: "transparent" }, g);
+    mk("path", { d: `M${cx},${cy - 8}L${cx + 7},${cy}L${cx},${cy + 8}L${cx - 7},${cy}Z`, fill: "var(--ink)", stroke: "var(--paper)", "stroke-width": 2 }, g);
+    hook(g, `<b>${esc(j.what)}</b><span class="log">${esc(j.reason)}</span>`, cx, cy - 8);
+  });
+  $("#runList").innerHTML = R.steps.map(st => `<li>${esc(st.label)}, ${Math.round(st.end - st.start)} min</li>`).join("") +
+    R.judgements.map(j => `<li>Judgement call at ${Math.round(j.t)} min: ${esc(j.what)}. ${esc(j.reason)}</li>`).join("");
+})();
 
 /* ------------------------------------------------------------ Skill builder */
 const lines = id => $(id).value.split("\n").map(s => s.trim()).filter(Boolean);

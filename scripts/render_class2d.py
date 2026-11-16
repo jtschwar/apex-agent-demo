@@ -42,11 +42,21 @@ def read_model_classes(path):
     return rows
 
 
-def to_u8(img):
-    lo, hi = np.percentile(img, [1, 99])
+def to_u8(img, outside=46):
+    """Contrast-stretch using only the pixels inside the circular mask.
+
+    RELION's zero mask leaves a constant value outside the circle; including it in the
+    percentiles makes the surround a different grey in every class. Paint it one shade.
+    """
+    inside = np.abs(img - img[0, 0]) > 1e-6
+    if not inside.any():
+        return np.full(img.shape, outside, np.uint8)
+    lo, hi = np.percentile(img[inside], [1, 99])
     if hi <= lo:
         return np.full(img.shape, 128, np.uint8)
-    return (np.clip((img - lo) / (hi - lo), 0, 1) * 255).astype(np.uint8)
+    out = (np.clip((img - lo) / (hi - lo), 0, 1) * 255).astype(np.uint8)
+    out[~inside] = outside
+    return out
 
 
 def font(size):
@@ -61,6 +71,8 @@ def font(size):
 
 def main(job_dir, it):
     job = Path(job_dir)
+    for old in (ROOT / "assets/classes").glob("class_*.png"):   # drop images from a previous, larger run
+        old.unlink()
     stack = read_mrcs(job / ("run_it%03d_classes.mrcs" % it))
     meta = read_model_classes(job / ("run_it%03d_model.star" % it))
     n_particles = sum(1 for l in (job / ("run_it%03d_data.star" % it)).read_text().splitlines()
@@ -82,7 +94,8 @@ def main(job_dir, it):
         w.writeheader()
         w.writerows(rows)
 
-    tile, pad, label_h, ncol = 180, 8, 40, 10
+    tile, pad, label_h = 180, 8, 40
+    ncol = 8 if len(stack) <= 24 else 10
     nrow = -(-len(stack) // ncol)
     sheet = Image.new("RGB", (ncol * (tile + pad) + pad, nrow * (tile + label_h + pad) + pad), "white")
     draw = ImageDraw.Draw(sheet)

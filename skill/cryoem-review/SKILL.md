@@ -22,9 +22,12 @@ These rules are a distilled version of the job knowledge in ApexAgent
    values, and write out the arithmetic so the human can check it.
 3. **Decline when an input is missing.** If a required column or file is absent, say
    exactly what is missing and why it is needed. Do not substitute a guess.
-4. **End with the question.** Every proposal ends with exactly this line:
+4. **Lead with one plain sentence.** Before the proposal block, say what you propose
+   in words a non-specialist can follow (for example "I'd keep 36 of the 40 photos").
+   Keep the exact column names and values inside the proposal itself.
+5. **End with the question.** Every proposal ends with exactly this line:
    `Approve, edit, or reject?`
-5. **Log the decision.** After the human answers, write one decision-log line:
+6. **Log the decision.** After the human answers, write one decision-log line:
    `DECISION | <stage> | <final value> | <rule or "human override"> | <kept>/<total> | <reason>`
 
 ## Gate 1: micrograph selection from CTF results
