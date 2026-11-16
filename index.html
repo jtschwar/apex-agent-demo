@@ -97,16 +97,33 @@ ol.steps { margin: 0; padding-left: 1.3em; } ol.steps li { margin: 0.3em 0; }
 .byline { margin-top: 2em; color: var(--ink-2); }
 .byline b { color: var(--ink); }
 
-/* the pattern: a real sequence, so it is numbered */
-.flow { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 2.2em; counter-reset: f; }
-@media (max-width: 900px) { .flow { grid-template-columns: 1fr 1fr; gap: 28px 0; } }
-.flow div { position: relative; padding: 1.1em 2.2em 1em 0; border-top: 3px solid var(--data); }
-.flow div:last-child { border-top-color: var(--ok); }
-.flow div::before { counter-increment: f; content: counter(f); position: absolute; top: -0.8em; left: 0; background: var(--paper);
-  padding-right: 0.45em; font-weight: 800; color: var(--data); }
-.flow div:last-child::before { color: var(--ok); }
-.flow b { display: block; font-size: 1.35em; line-height: 1.15; margin-top: 0.3em; }
-.flow span { color: var(--ink-2); font-size: 0.92em; }
+/* the five parts: a real sequence of design questions, so it is numbered */
+.parts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); column-gap: clamp(14px, 1.6vw, 30px); margin-top: 1.6em; }
+.parts .group { grid-row: 1; display: flex; align-items: center; gap: 0.45em; font-weight: 700; font-size: 1.05em;
+  padding-bottom: 0.5em; border-bottom: 3px solid var(--rule); margin-bottom: 1.5em; }
+.parts .group .emoji { font-size: 1.25em; line-height: 1; }
+.parts .group small { font-weight: 400; color: var(--ink-2); font-size: 0.85em; }
+.parts .g-in { grid-column: 1; }
+.parts .g-agent { grid-column: 2 / span 2; border-bottom-color: var(--data); }
+.parts .g-you { grid-column: 4 / span 2; border-bottom-color: var(--ok); }
+.part { grid-row: 2; display: flex; flex-direction: column; }
+.part .num { display: inline-grid; place-items: center; width: 1.9em; height: 1.9em; border-radius: 50%; font-weight: 800;
+  background: var(--sunk); color: var(--ink); margin-bottom: 0.55em; }
+.part.agent .num { background: var(--data); color: var(--data-ink); }
+.part.you .num { background: var(--ok); color: #fff; }
+.part h3 { font-size: 1.45em; letter-spacing: -0.01em; margin: 0 0 0.2em; }
+.part .q { color: var(--ink); font-weight: 500; margin: 0 0 0.9em; min-height: 3em; }
+.part .ex { flex: 1; background: var(--panel); border: 1px solid var(--rule); border-radius: 12px; padding: 0.85em 1em;
+  color: var(--ink-2); font-size: 0.92em; margin: 0; }
+.exswitch { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 1.6em; }
+.exswitch span { color: var(--ink-2); font-size: 0.88em; margin-right: 4px; }
+.exswitch button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+@media (max-width: 900px) {
+  .parts { grid-template-columns: 1fr; row-gap: 1.2em; }
+  .parts .group { display: none; }
+  .part { grid-row: auto; }
+  .part .q { min-height: 0; }
+}
 
 /* ---------------------------------------------------------------- CTF chart */
 .tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
@@ -177,7 +194,7 @@ svg text { font: 13px var(--sans); fill: var(--muted); font-variant-numeric: tab
     <div>
       <h1>Propose,<br>check,<br>approve.</h1>
       <p class="lede" style="margin-top:0.9em">Teach Claude a lab's review rules with a Skill, then be the human in the loop. Distilled from <a href="https://github.com/czimaginginstitute/ApexAgent">ApexAgent</a>, the agent that runs our cryo-EM processing.</p>
-      <p class="byline"><b>Jonathan Schwartz &amp; Utz Ermel</b>, Imaging<br>AI Quick Builds, November 16, 2026</p>
+      <p class="byline"><b>Jonathan Schwartz</b>, Imaging<br>AI Quick Builds, November 16, 2026</p>
     </div>
     <figure style="margin:0">
       <canvas class="thon" id="thon" width="900" height="900" role="img" aria-label="A simulated CTF power spectrum: concentric Thon rings, slightly elliptical"></canvas>
@@ -186,18 +203,27 @@ svg text { font: 13px var(--sans); fill: var(--muted); font-variant-numeric: tab
   </div>
 </section>
 
-<!-- ============================================================ 2 the pattern -->
-<section class="slide" aria-label="The pattern">
+<!-- ============================================================ 2 the five parts -->
+<section class="slide" aria-label="The five parts">
   <div class="body">
-    <h2>An agent you can supervise</h2>
-    <p class="sub" style="font-size:1.15em">Processing a cryo-EM dataset takes dozens of steps, and each one needs an expert's call. A chatbot asked “which data should we keep?” guesses. ApexAgent doesn't guess, and it doesn't decide either. It follows one loop.</p>
-    <div class="flow">
-      <div><b>Agent proposes</b><span>the next step, using the lab's written rules</span></div>
-      <div><b>Shows its evidence</b><span>every claim names the value it rests on</span></div>
-      <div><b>You approve, edit, or reject</b><span>the person keeps the authority</span></div>
-      <div><b>Decision is logged</b><span>so every result can be traced back</span></div>
+    <h2>Every automation has five parts</h2>
+    <p class="sub" style="font-size:1.1em">Answer five questions about a piece of work and you have the design for an agent. ApexAgent, the agent that runs our cryo-EM processing, is one set of answers. Today you'll build a small one in claude.ai.</p>
+    <div class="parts">
+      <div class="group g-in">The work</div>
+      <div class="group g-agent"><span class="emoji" aria-hidden="true">🤖</span> The agent <small>what it knows and can do</small></div>
+      <div class="group g-you"><span class="emoji" aria-hidden="true">🧑</span> You <small>how far you trust it</small></div>
+      <div class="part"><span class="num">1</span><h3>Work</h3><p class="q">What repeats, and what are its steps?</p><p class="ex" data-part="0"></p></div>
+      <div class="part agent"><span class="num">2</span><h3>Knowledge</h3><p class="q">What does the expert know that isn't written down?</p><p class="ex" data-part="1"></p></div>
+      <div class="part agent"><span class="num">3</span><h3>Hands</h3><p class="q">What can it read, run, or change by itself?</p><p class="ex" data-part="2"></p></div>
+      <div class="part you"><span class="num">4</span><h3>Gates</h3><p class="q">Where must it stop and ask?</p><p class="ex" data-part="3"></p></div>
+      <div class="part you"><span class="num">5</span><h3>Record</h3><p class="q">How will you check what it did later?</p><p class="ex" data-part="4"></p></div>
     </div>
-    <p class="sub" style="margin-top:2.2em">Today you'll build the smallest version of it in claude.ai, with no installs. A <span class="term">Skill</span> is a saved set of instructions Claude loads when a task calls for it.</p>
+    <div class="exswitch" role="group" aria-label="Example">
+      <span>Example:</span>
+      <button type="button" data-ex="apex" aria-pressed="true">ApexAgent</button>
+      <button type="button" data-ex="today" aria-pressed="false">Today in claude.ai</button>
+      <button type="button" data-ex="everyday" aria-pressed="false">Paying invoices</button>
+    </div>
   </div>
 </section>
 
@@ -217,8 +243,8 @@ svg text { font: 13px var(--sans); fill: var(--muted); font-variant-numeric: tab
       </div>
       <ol class="steps">
         <li>Open <a href="https://claude.ai">claude.ai</a> and sign in.</li>
-        <li>In <b>Settings → Capabilities</b>, check that <b>Code execution</b> is on.</li>
-        <li>Under <b>Skills</b>, choose <b>Upload skill</b>, pick <code>cryoem-review.zip</code>, and switch it on.</li>
+        <li>Go to <b>Settings → Customize → Skills</b>, upload <code>cryoem-review.zip</code>, and switch it on.</li>
+        <li>If <b>Settings → Capabilities</b> has a <b>Code execution</b> setting, turn it on. Without it, Claude shows its arithmetic instead.</li>
         <li>Start a <b>new chat</b>.</li>
       </ol>
     </div>
@@ -231,6 +257,11 @@ svg text { font: 13px var(--sans); fill: var(--muted); font-variant-numeric: tab
         <p class="kind stuck">If stuck</p>
         <p style="margin:0 0 0.8em">No Skills menu, or the upload fails? Copy the Skill text, paste it as the first message of a new chat, and add “Follow these instructions for the rest of this chat.”</p>
         <button data-copy-skill>Copy the Skill text</button>
+      </div>
+      <div class="panel">
+        <p class="kind">Using Claude Code instead?</p>
+        <p style="margin:0">Install the same zip as a Skill, then run <code>claude</code> in the folder with the data files and use the same prompts.</p>
+        <div class="prompt">mkdir -p ~/.claude/skills && unzip ~/Downloads/cryoem-review.zip -d ~/.claude/skills</div>
       </div>
     </div>
   </div>
@@ -508,6 +539,37 @@ $$(".prompt").forEach(p => {
   const text = p.textContent; b.onclick = () => copyText(text, b); p.appendChild(b);
 });
 $$("[data-copy-skill]").forEach(b => (b.onclick = () => copyText(window.SKILL_MD, b)));
+
+/* ------------------------------------------------------------ the five parts: one design, three examples */
+const PARTS = {
+  apex: [
+    "Full cryo-EM processing in RELION 5: a dozen or more jobs, from raw microscope movies to a 3D map.",
+    "One job-knowledge file per step: how to set the parameters, what to check in the result, and when to decline.",
+    "Tools that read results straight from the pipeline and submit jobs to the computing cluster.",
+    "An autonomy level for each step. Routine jobs run on their own; choosing data waits for a scientist.",
+    "Every proposal, the evidence behind it, and the decision, in one dashboard.",
+  ],
+  today: [
+    "Two review steps from that pipeline: which micrographs (microscope images) to keep, then which 2D classes.",
+    "One Skill, a saved set of instructions Claude loads when a task needs it, condensed from two of those files.",
+    "Code execution on the files you attach, so every number is computed, not guessed.",
+    "Claude proposes and you approve, edit, or reject. It pushes back before it breaks a rule.",
+    "A decision-log line after every approval.",
+  ],
+  everyday: [
+    "Each week, check every invoice, then pay the ones that are ready.",
+    "No PO number means not ready. Over $10,000 needs a second approver.",
+    "The invoice spreadsheet, and code to check every row of it.",
+    "It can sort and flag on its own. It never marks an invoice paid.",
+    "Who approved each payment, and the rule that allowed it.",
+  ],
+};
+function showParts(key) {
+  $$(".parts .ex").forEach(p => (p.textContent = PARTS[key][+p.dataset.part]));
+  $$(".exswitch button").forEach(b => b.setAttribute("aria-pressed", b.dataset.ex === key));
+}
+$$(".exswitch button").forEach(b => (b.onclick = () => showParts(b.dataset.ex)));
+showParts("apex");
 
 /* ------------------------------------------------------------ title: a real CTF */
 (function drawThon() {

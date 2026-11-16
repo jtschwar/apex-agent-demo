@@ -1,7 +1,8 @@
-"""Package skill/cryoem-review/ as materials/cryoem-review.zip for upload to claude.ai.
+"""Package skill/cryoem-review/ as materials/cryoem-review.zip.
 
-The zip holds the skill folder itself (cryoem-review/SKILL.md), which is the layout
-claude.ai's skill upload expects. Re-run after editing SKILL.md.
+The zip holds the skill folder itself (cryoem-review/SKILL.md). That one layout serves
+both routes: claude.ai's skill upload, and Claude Code, where unzipping into
+~/.claude/skills/ (or a project's .claude/skills/) installs it. Re-run after editing SKILL.md.
 """
 import zipfile
 from pathlib import Path

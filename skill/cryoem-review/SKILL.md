@@ -16,7 +16,10 @@ These rules are a distilled version of the job knowledge in ApexAgent
    the value it rests on. "mic_012 is bad" is not allowed; "mic_012: ctf_max_resolution_A
    = 8.9, above the 7.6 A cutoff" is.
 2. **Compute, don't estimate.** When code execution is available, compute statistics
-   with code from the file. Never eyeball a percentile or count rows by hand.
+   with code from the file. Never eyeball a percentile or count rows by hand. If code
+   execution is not available, show your working instead: list the column sorted, give
+   the percentile position as 0.9 x (N - 1), interpolate between the two neighbouring
+   values, and write out the arithmetic so the human can check it.
 3. **Decline when an input is missing.** If a required column or file is absent, say
    exactly what is missing and why it is needed. Do not substitute a guess.
 4. **End with the question.** Every proposal ends with exactly this line:

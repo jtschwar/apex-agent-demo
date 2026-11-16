@@ -113,7 +113,7 @@ Built following the frontend-design and dataviz skills. Keep to it:
 - One signature element: the computed Thon-ring canvas on the title slide. Don't add
   decoration elsewhere.
 - No all-caps labels, no eyebrow labels above every heading. Numbered markers are used
-  only where content is a real sequence (steps 0–3, the 4-stage flow).
+  only where content is a real sequence (steps 0–3, the five parts on slide 2).
 - Slides fill the full viewport width (`--pad` side padding). Each slide scrolls on its
   own if content overflows; check 1600×900 and ~1280×720 (projector) after edits.
 - Charts: thin bars with 4px rounded tops, a hover tooltip, a legend. Text never uses
@@ -132,8 +132,10 @@ proposal format, update slides 4 and 6.
 ## Open items (as of 2026-11-14)
 
 - [ ] Jonathan to confirm or replace `EXPERT_KEEP`.
-- [ ] Verify the claude.ai menu path on slide 3 (Settings → Capabilities → Skills →
-      Upload skill; Code execution on) against the CZI org account.
+- [ ] Confirm a non-admin CZI account can upload a Skill (Settings → Customize → Skills,
+      per Jonathan's screenshot 2026-11-15). Code execution is optional: without it the
+      Skill shows its arithmetic. The Claude Code route (unzip into ~/.claude/skills) was
+      tested on 2026-11-15, with and without code: 7.6 Å, 36/40, mic_007/mic_029 flagged.
 - [ ] Dry-run Steps 1–3 in a real claude.ai chat with the Skill and check that the outputs
       match the "You should see" boxes (cutoff 7.6 Å, 36/40, mic_007/mic_029 flagged,
       the pushback on 5 Å).
